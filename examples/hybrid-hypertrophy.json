@@ -1,0 +1,4222 @@
+{
+  "version": 1,
+  "sources": [],
+  "equipment": [
+    {
+      "id": "ef532f18-8687-57ab-a7d9-1a8b99dc2f43",
+      "revision": 0,
+      "name": "Barbell",
+      "model": "",
+      "brand": "",
+      "type": "barbell",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "7adf2272-8316-501b-a2c8-104efd803595",
+      "revision": 0,
+      "name": "Dumbbell",
+      "model": "",
+      "brand": "",
+      "type": "dumbbell",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "revision": 0,
+      "name": "Cable Station",
+      "model": "",
+      "brand": "",
+      "type": "cable",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "80d1d624-3deb-5acd-a549-d0747e59d833",
+      "revision": 0,
+      "name": "Pull-Up Bar",
+      "model": "",
+      "brand": "",
+      "type": "rig",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "dabcdf27-61c1-5a93-a809-4faa92113b46",
+      "revision": 0,
+      "name": "Parallel Bars",
+      "model": "",
+      "brand": "",
+      "type": "rig",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "e4865d9a-b626-5eb9-aeb7-74570c543ad2",
+      "revision": 0,
+      "name": "Pec Deck",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "4aa3c4ff-42a3-57db-a558-2f81ccee37b6",
+      "revision": 0,
+      "name": "Pendulum Squat",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "c1abcd94-e05e-5353-a4db-ca72e9eba434",
+      "revision": 0,
+      "name": "Hack Squat",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "71c52f4e-e02a-56e8-a296-2afd22950a33",
+      "revision": 0,
+      "name": "Leg Extension",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "0afdb013-c9f8-5906-a506-aa3161a87ab1",
+      "revision": 0,
+      "name": "Seated Leg Curl",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "c7b48488-1538-54c5-af47-08c5ce6c3804",
+      "revision": 0,
+      "name": "Standing Calf Raise",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "6d4d1f77-1a80-5c29-a18e-1c01be0560d6",
+      "revision": 0,
+      "name": "Hip Thrust Machine",
+      "model": "",
+      "brand": "",
+      "type": "machine",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "a251fc1f-409c-5586-a6c5-96f2c4cbcb7d",
+      "revision": 0,
+      "name": "Kettlebell",
+      "model": "",
+      "brand": "",
+      "type": "kettlebell",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "a4d514ad-ea93-5752-a519-61b5248cb47c",
+      "revision": 0,
+      "name": "Row Ergometer",
+      "model": "",
+      "brand": "",
+      "type": "cardio",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "b3fad417-da00-5304-a571-32dfd24f0a2f",
+      "revision": 0,
+      "name": "Stationary Bike",
+      "model": "",
+      "brand": "",
+      "type": "cardio",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "ae200a84-fa85-521a-abc0-4d01b4fa6251",
+      "revision": 0,
+      "name": "Bodyweight",
+      "model": "",
+      "brand": "",
+      "type": "bodyweight",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "def48f45-2120-5f4d-a9e1-7ee5575f5c2a",
+      "revision": 0,
+      "name": "Plyometric Box",
+      "model": "",
+      "brand": "",
+      "type": "box",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "0f2dfb07-52a5-5b8d-a6c6-e072552d00dd",
+      "revision": 0,
+      "name": "Slam Ball",
+      "model": "",
+      "brand": "",
+      "type": "ball",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    },
+    {
+      "id": "d31038ea-a62e-5b09-a5f4-3e8ff421a976",
+      "revision": 0,
+      "name": "Push Sled",
+      "model": "",
+      "brand": "",
+      "type": "sled",
+      "notes": "",
+      "startingResistance": null,
+      "archived": false
+    }
+  ],
+  "exercises": [
+    {
+      "id": "3a4a3709-249d-5043-a87b-6a2eb9cc4e47",
+      "revision": 0,
+      "name": "Barbell Bench Press",
+      "equipmentId": "ef532f18-8687-57ab-a7d9-1a8b99dc2f43",
+      "equipment": "Barbell",
+      "setup": "Flat bench",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front_delts",
+        "triceps"
+      ],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "9f32db80-055b-52f5-a872-7d4295d00a0e",
+      "revision": 0,
+      "name": "Strict Pull-Up",
+      "equipmentId": "80d1d624-3deb-5acd-a549-d0747e59d833",
+      "equipment": "Pull-Up Bar",
+      "setup": "Pronated grip, strict",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms"
+      ],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": null,
+      "trackingFields": [
+        "reps"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "2adf25a4-0d69-5a11-af03-acdc2ad90d94",
+      "revision": 0,
+      "name": "Pec Deck Fly",
+      "equipmentId": "e4865d9a-b626-5eb9-aeb7-74570c543ad2",
+      "equipment": "Pec Deck",
+      "setup": "Seated",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front_delts"
+      ],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "4d9eb9a9-a3db-554f-a50f-f9ff2b2e7e49",
+      "revision": 0,
+      "name": "Dumbbell Curl",
+      "equipmentId": "7adf2272-8316-501b-a2c8-104efd803595",
+      "equipment": "Dumbbell",
+      "setup": "Standing, supinated grip",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "per_hand"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "a1d7d77c-08bd-5dc8-a92b-b1107b236ccb",
+      "revision": 0,
+      "name": "Cable Lateral Raise",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Low pulley, single arm",
+      "primaryMuscle": "side_delts",
+      "secondaryMuscles": [],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "9690ed71-e46f-50ba-add8-d316c8571642",
+      "revision": 0,
+      "name": "Cable Rear Delt Fly",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Standing",
+      "primaryMuscle": "rear_delts",
+      "secondaryMuscles": [
+        "upper_back"
+      ],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "2ab0e37e-3c2b-5ad3-a6d6-deab429497fe",
+      "revision": 0,
+      "name": "Seated Cable Row",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Neutral grip",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear_delts"
+      ],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "7d60a134-4991-5b69-a4cb-4af96aa6e915",
+      "revision": 0,
+      "name": "Cable Triceps Pushdown",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "High pulley, rope attachment",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "545680da-981e-54f3-aedc-df33b0d343a4",
+      "revision": 0,
+      "name": "Pendulum Squat",
+      "equipmentId": "4aa3c4ff-42a3-57db-a558-2f81ccee37b6",
+      "equipment": "Pendulum Squat",
+      "setup": "Bilateral",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "adductors"
+      ],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "52347ff1-5241-5a9f-ae28-921f68f89c5b",
+      "revision": 0,
+      "name": "Leg Extension",
+      "equipmentId": "71c52f4e-e02a-56e8-a296-2afd22950a33",
+      "equipment": "Leg Extension",
+      "setup": "Seated, bilateral",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "85b14715-ecd0-599e-aae5-2415b607d4c9",
+      "revision": 0,
+      "name": "Seated Leg Curl",
+      "equipmentId": "0afdb013-c9f8-5906-a506-aa3161a87ab1",
+      "equipment": "Seated Leg Curl",
+      "setup": "Bilateral",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "7884baa9-251a-5536-ae48-15a0fc864289",
+      "revision": 0,
+      "name": "Standing Calf Raise",
+      "equipmentId": "c7b48488-1538-54c5-af47-08c5ce6c3804",
+      "equipment": "Standing Calf Raise",
+      "setup": "Bilateral",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "b1c194f7-a490-5d97-a8b4-ea21467e45ab",
+      "revision": 0,
+      "name": "Hanging Knee Raise",
+      "equipmentId": "80d1d624-3deb-5acd-a549-d0747e59d833",
+      "equipment": "Pull-Up Bar",
+      "setup": "Hanging, bent knees",
+      "primaryMuscle": "abs",
+      "secondaryMuscles": [
+        "hip_flexors",
+        "grip"
+      ],
+      "pattern": "core",
+      "defaultRole": "lifting",
+      "defaultLoad": null,
+      "trackingFields": [
+        "reps"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "50a6ed9d-836a-5230-a9a7-2566997b2461",
+      "revision": 0,
+      "name": "Cable Chop",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "High to low, both sides",
+      "primaryMuscle": "obliques",
+      "secondaryMuscles": [
+        "core"
+      ],
+      "pattern": "core",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "f9d10a98-0810-50c4-af8c-cf0a99a0500d",
+      "revision": 0,
+      "name": "Chest-Supported Dumbbell Row",
+      "equipmentId": "7adf2272-8316-501b-a2c8-104efd803595",
+      "equipment": "Dumbbell",
+      "setup": "Prone on incline bench",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear_delts"
+      ],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "per_hand"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "7c420ccf-b1a2-586d-aee8-73d14ae72ac7",
+      "revision": 0,
+      "name": "Lat Pulldown",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Seated, pronated grip",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "409df73d-4b08-55a9-a4be-d8f0378b074e",
+      "revision": 0,
+      "name": "Bayesian Cable Curl",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Low pulley, facing away",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "pattern": "pull",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "73a5793e-f37f-51d5-a93b-1ef9965ece30",
+      "revision": 0,
+      "name": "Cable Crunch",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Kneeling, high pulley and rope",
+      "primaryMuscle": "abs",
+      "secondaryMuscles": [],
+      "pattern": "core",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "a1ef9c1e-5f51-5351-a483-e0bbfb065a44",
+      "revision": 0,
+      "name": "Hack Squat",
+      "equipmentId": "c1abcd94-e05e-5353-a4db-ca72e9eba434",
+      "equipment": "Hack Squat",
+      "setup": "Bilateral",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "adductors"
+      ],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "7d81ad2c-8b6f-5bd5-adaa-c40d20a84b5c",
+      "revision": 0,
+      "name": "Dumbbell Walking Lunge",
+      "equipmentId": "7adf2272-8316-501b-a2c8-104efd803595",
+      "equipment": "Dumbbell",
+      "setup": "Alternating steps",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "adductors"
+      ],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "per_hand"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "8421b468-d810-587d-ad2b-3eaca7b02eb0",
+      "revision": 0,
+      "name": "Single-Leg Kettlebell RDL",
+      "equipmentId": "a251fc1f-409c-5586-a6c5-96f2c4cbcb7d",
+      "equipment": "Kettlebell",
+      "setup": "One kettlebell, both sides",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes",
+        "lower_back"
+      ],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "71ce12a8-9cd1-5fde-a6c9-73f1af41ac94",
+      "revision": 0,
+      "name": "Machine Hip Thrust",
+      "equipmentId": "6d4d1f77-1a80-5c29-a18e-1c01be0560d6",
+      "equipment": "Hip Thrust Machine",
+      "setup": "Bilateral",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "pattern": "legs",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "9e285e22-8760-55d0-ac0d-4d32c8a1fa38",
+      "revision": 0,
+      "name": "Incline Dumbbell Press",
+      "equipmentId": "7adf2272-8316-501b-a2c8-104efd803595",
+      "equipment": "Dumbbell",
+      "setup": "Incline bench",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front_delts",
+        "triceps"
+      ],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "per_hand"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "900440ed-f278-5e64-aa22-a7677f5d4370",
+      "revision": 0,
+      "name": "Parallel-Bar Dip",
+      "equipmentId": "dabcdf27-61c1-5a93-a809-4faa92113b46",
+      "equipment": "Parallel Bars",
+      "setup": "Forward torso lean",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front_delts"
+      ],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": null,
+      "trackingFields": [
+        "reps"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "09693d50-25e1-5ea0-acdf-8d268e53ce4a",
+      "revision": 0,
+      "name": "Seated Dumbbell Overhead Press",
+      "equipmentId": "7adf2272-8316-501b-a2c8-104efd803595",
+      "equipment": "Dumbbell",
+      "setup": "Back-supported bench",
+      "primaryMuscle": "front_delts",
+      "secondaryMuscles": [
+        "side_delts",
+        "triceps"
+      ],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "per_hand"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "ef3b2052-657c-517c-a2f8-c1c3f7e644a0",
+      "revision": 0,
+      "name": "Overhead Cable Triceps Extension",
+      "equipmentId": "f4dc9c93-d570-56c2-a0f6-e241a9781012",
+      "equipment": "Cable Station",
+      "setup": "Rope attachment",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "pattern": "push",
+      "defaultRole": "lifting",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "c2aea0e8-eea5-5d43-af21-e670aa613c5a",
+      "revision": 0,
+      "name": "Row Ergometer",
+      "equipmentId": "a4d514ad-ea93-5752-a519-61b5248cb47c",
+      "equipment": "Row Ergometer",
+      "setup": "",
+      "primaryMuscle": null,
+      "secondaryMuscles": [
+        "back",
+        "quads"
+      ],
+      "pattern": "conditioning",
+      "defaultRole": "conditioning",
+      "defaultLoad": null,
+      "trackingFields": [
+        "distanceMeters"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "641d029e-0913-58b9-acc4-f8d02d5b85c3",
+      "revision": 0,
+      "name": "Stationary Cycling",
+      "equipmentId": "b3fad417-da00-5304-a571-32dfd24f0a2f",
+      "equipment": "Stationary Bike",
+      "setup": "",
+      "primaryMuscle": null,
+      "secondaryMuscles": [
+        "quads"
+      ],
+      "pattern": "conditioning",
+      "defaultRole": "conditioning",
+      "defaultLoad": null,
+      "trackingFields": [
+        "durationSeconds"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "0afd50bd-2939-5873-a729-0ab8771b8a2f",
+      "revision": 0,
+      "name": "Farmer Carry",
+      "equipmentId": "7adf2272-8316-501b-a2c8-104efd803595",
+      "equipment": "Dumbbell",
+      "setup": "One dumbbell per hand",
+      "primaryMuscle": null,
+      "secondaryMuscles": [
+        "grip",
+        "core"
+      ],
+      "pattern": "carry",
+      "defaultRole": "conditioning",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "per_hand"
+      },
+      "trackingFields": [
+        "distanceMeters",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "92e890f0-f8f5-5836-a29c-b2e9b2a5c95c",
+      "revision": 0,
+      "name": "Sled Push",
+      "equipmentId": "d31038ea-a62e-5b09-a5f4-3e8ff421a976",
+      "equipment": "Push Sled",
+      "setup": "Clear turf lane",
+      "primaryMuscle": null,
+      "secondaryMuscles": [
+        "quads",
+        "glutes",
+        "calves"
+      ],
+      "pattern": "conditioning",
+      "defaultRole": "conditioning",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "distanceMeters",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "3b8a0a79-07a9-577d-a8f9-78d96c97bb65",
+      "revision": 0,
+      "name": "Box Jump",
+      "equipmentId": "def48f45-2120-5f4d-a9e1-7ee5575f5c2a",
+      "equipment": "Plyometric Box",
+      "setup": "Step down between repetitions",
+      "primaryMuscle": null,
+      "secondaryMuscles": [
+        "quads",
+        "glutes",
+        "calves"
+      ],
+      "pattern": "legs",
+      "defaultRole": "power",
+      "defaultLoad": null,
+      "trackingFields": [
+        "reps"
+      ],
+      "notes": "",
+      "archived": false
+    },
+    {
+      "id": "51d17b99-7361-55ff-ae9c-9d01670b7275",
+      "revision": 0,
+      "name": "Medicine Ball Slam",
+      "equipmentId": "0f2dfb07-52a5-5b8d-a6c6-e072552d00dd",
+      "equipment": "Slam Ball",
+      "setup": "Clear floor",
+      "primaryMuscle": null,
+      "secondaryMuscles": [
+        "core",
+        "lats",
+        "shoulders"
+      ],
+      "pattern": "conditioning",
+      "defaultRole": "power",
+      "defaultLoad": {
+        "value": null,
+        "unit": "lb",
+        "basis": "total"
+      },
+      "trackingFields": [
+        "reps",
+        "load"
+      ],
+      "notes": "",
+      "archived": false
+    }
+  ],
+  "weeks": [
+    {
+      "id": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "revision": 0,
+      "startDate": "2026-01-05",
+      "title": "Hybrid Hypertrophy",
+      "targets": {
+        "chest": 14,
+        "back": 14,
+        "front_delts": 3,
+        "side_delts": 10,
+        "rear_delts": 6,
+        "biceps": 9,
+        "triceps": 9,
+        "quads": 14,
+        "hamstrings": 10,
+        "glutes": 4,
+        "calves": 6,
+        "abs": 6,
+        "obliques": 6
+      },
+      "notes": "Illustrative week. Repeat onto your chosen Monday and choose your own working loads."
+    }
+  ],
+  "workouts": [
+    {
+      "id": "60b0c289-1390-5042-acc7-c58c160a5838",
+      "revision": 0,
+      "kind": "planned",
+      "routineId": null,
+      "weekId": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "date": "2026-01-05",
+      "title": "Upper",
+      "focus": "",
+      "blocks": [
+        {
+          "id": "a2b062e9-b237-555e-a521-4d7e22e08c56",
+          "title": "Preparation",
+          "kind": "straight",
+          "restSeconds": null,
+          "rounds": null,
+          "items": [],
+          "notes": "Easy row or bike for 3–5 minutes. Cat-cow ×6, thoracic rotation ×6/side, scapular push-up ×8. Ramp the first press and pull before working sets."
+        },
+        {
+          "id": "ade1f281-79ab-5d50-a2c3-44a19bf32068",
+          "title": "Bench Press",
+          "kind": "straight",
+          "restSeconds": 180,
+          "rounds": null,
+          "items": [
+            {
+              "id": "f7111c78-6913-594b-a2f9-99dae734ba06",
+              "exerciseId": "3a4a3709-249d-5043-a87b-6a2eb9cc4e47",
+              "name": "Barbell Bench Press",
+              "equipment": "Barbell",
+              "setup": "Flat bench",
+              "primaryMuscle": "chest",
+              "secondaryMuscles": [
+                "front_delts",
+                "triceps"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "b9f26928-73f7-534d-ab2f-e2e43aaa4c25",
+                  "repsMin": 5,
+                  "repsMax": 8,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "7b070129-4b6b-586c-a6f6-6d60249a7739",
+                  "repsMin": 5,
+                  "repsMax": 8,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "4299ef8f-a9b3-5d88-a605-2e49b0601de4",
+                  "repsMin": 5,
+                  "repsMax": 8,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "ca8861fb-b773-53d3-ad22-2dbc3f5d0afc",
+                  "repsMin": 5,
+                  "repsMax": 8,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "7d34e307-85d1-5ff6-a7cb-ed3f972b364a",
+          "title": "Strict Pull-Up",
+          "kind": "straight",
+          "restSeconds": 150,
+          "rounds": null,
+          "items": [
+            {
+              "id": "d96dad0d-abc0-5693-a099-919ca27e16db",
+              "exerciseId": "9f32db80-055b-52f5-a872-7d4295d00a0e",
+              "name": "Strict Pull-Up",
+              "equipment": "Pull-Up Bar",
+              "setup": "Pronated grip, strict",
+              "primaryMuscle": "back",
+              "secondaryMuscles": [
+                "biceps",
+                "forearms"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps"
+              ],
+              "sets": [
+                {
+                  "id": "0aa7ee8b-5cdc-543f-a96b-cf9427a831dd",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f9789cc7-c33f-531a-ad4e-12c165b637a8",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "3c679305-14de-5b37-a146-a77fb5d5ae17",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "e4e754c3-7467-5865-a370-7915a7dfe9a3",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "ebf42600-0512-50ce-ac4d-96373d58a3af",
+          "title": "Chest And Biceps",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "e5901dd1-3db3-552b-a180-00b875fd4849",
+              "exerciseId": "2adf25a4-0d69-5a11-af03-acdc2ad90d94",
+              "name": "Pec Deck Fly",
+              "equipment": "Pec Deck",
+              "setup": "Seated",
+              "primaryMuscle": "chest",
+              "secondaryMuscles": [
+                "front_delts"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "d245aaca-36d9-5c6c-ac10-f27a6997cd80",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "ffa392a4-cafb-5078-a8cf-b797363a25ba",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "2195da41-5442-5d56-a8d8-6d861a944944",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "3e414f4b-a620-5628-a5c2-2fe02f4da159",
+              "exerciseId": "4d9eb9a9-a3db-554f-a50f-f9ff2b2e7e49",
+              "name": "Dumbbell Curl",
+              "equipment": "Dumbbell",
+              "setup": "Standing, supinated grip",
+              "primaryMuscle": "biceps",
+              "secondaryMuscles": [
+                "forearms"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "23824c28-8880-5bdd-aad7-beac468e64e2",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "bf1ea372-2c19-5ed0-ad54-831427744724",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "d5ec4c37-9a5e-5bf8-a5da-1b680fa49214",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Bring dumbbells beside the pec deck if space permits."
+        },
+        {
+          "id": "d5b54ea0-8684-5ea5-a7a1-705dfec52358",
+          "title": "Cable Shoulders",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "0e3a28bb-f736-59ee-a183-8043ffe2650a",
+              "exerciseId": "a1d7d77c-08bd-5dc8-a92b-b1107b236ccb",
+              "name": "Cable Lateral Raise",
+              "equipment": "Cable Station",
+              "setup": "Low pulley, single arm",
+              "primaryMuscle": "side_delts",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "3be22f45-ffe0-5e78-a2b7-71312b86f1b7",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "22d3fcaa-3a6e-56d7-a012-a116469a2107",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "ca97c9f1-df91-5769-a413-6562743bbbc3",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            },
+            {
+              "id": "daea025d-1cd9-56d4-a570-5927f4813317",
+              "exerciseId": "9690ed71-e46f-50ba-add8-d316c8571642",
+              "name": "Cable Rear Delt Fly",
+              "equipment": "Cable Station",
+              "setup": "Standing",
+              "primaryMuscle": "rear_delts",
+              "secondaryMuscles": [
+                "upper_back"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "20bbdc42-87e8-5281-a9db-db315a627ae6",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "4c48b8d3-ebb5-5661-a740-caff32da7b4a",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "55c96504-9782-548c-aaf0-2ac0fa226ff0",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "9c5deae0-c7fb-56da-a27b-308c993cfd9c",
+          "title": "Cable Row And Triceps",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "e2dcc6c8-7fdd-589a-afc6-749e2635f6a9",
+              "exerciseId": "2ab0e37e-3c2b-5ad3-a6d6-deab429497fe",
+              "name": "Seated Cable Row",
+              "equipment": "Cable Station",
+              "setup": "Neutral grip",
+              "primaryMuscle": "back",
+              "secondaryMuscles": [
+                "biceps",
+                "rear_delts"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "d994f890-1651-59ca-a4e7-7843b77eb973",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "87d2d248-4bb3-5821-ac36-f393dad8667b",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "6bafff13-2847-591b-a6d8-5f377be7599e",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "c66ee41f-dede-5b4c-a75f-278cb523c811",
+              "exerciseId": "7d60a134-4991-5b69-a4cb-4af96aa6e915",
+              "name": "Cable Triceps Pushdown",
+              "equipment": "Cable Station",
+              "setup": "High pulley, rope attachment",
+              "primaryMuscle": "triceps",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "38c1138b-c735-5933-aa2d-6b58788e14fe",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "9d4301fe-bbf7-5abc-a14e-48fee2357c97",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "5a2e7319-74d6-5cda-a064-78b06f347797",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Pair only if both stations are available nearby."
+        },
+        {
+          "id": "294b9f5e-89b9-50a1-a289-05bdb433c814",
+          "title": "Row And Carry",
+          "kind": "circuit",
+          "restSeconds": 90,
+          "rounds": null,
+          "items": [
+            {
+              "id": "f042df44-f529-50e0-a6df-7c1e4b5c77e8",
+              "exerciseId": "c2aea0e8-eea5-5d43-af21-e670aa613c5a",
+              "name": "Row Ergometer",
+              "equipment": "Row Ergometer",
+              "setup": "",
+              "primaryMuscle": null,
+              "secondaryMuscles": [
+                "back",
+                "quads"
+              ],
+              "role": "conditioning",
+              "unilateral": false,
+              "trackingFields": [
+                "distanceMeters"
+              ],
+              "sets": [
+                {
+                  "id": "8963d1f2-dbce-576e-acfc-461cf6816813",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": 250,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0ae23bb3-6c7c-5765-afcf-d7b170cb3ed9",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": 250,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "7231133f-8acd-5ad8-add9-112cf74e4a77",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": 250,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "378599bc-cb8f-5e5b-ab29-45bd35a0b361",
+              "exerciseId": "0afd50bd-2939-5873-a729-0ab8771b8a2f",
+              "name": "Farmer Carry",
+              "equipment": "Dumbbell",
+              "setup": "One dumbbell per hand",
+              "primaryMuscle": null,
+              "secondaryMuscles": [
+                "grip",
+                "core"
+              ],
+              "role": "conditioning",
+              "unilateral": false,
+              "trackingFields": [
+                "distanceMeters",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "367a764e-8fdc-550a-ae68-5875c73d7cba",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 30,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "63221a14-0079-5d39-a6b7-e34574578226",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 30,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "de3ec00f-97ee-555c-aa8a-d5d73260a80f",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 30,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        }
+      ],
+      "notes": "",
+      "source": null
+    },
+    {
+      "id": "b0068d30-d1e7-575c-a9ec-aa915ed32315",
+      "revision": 0,
+      "kind": "planned",
+      "routineId": null,
+      "weekId": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "date": "2026-01-06",
+      "title": "Quad-Focused Lower",
+      "focus": "",
+      "blocks": [
+        {
+          "id": "dbc6ebb9-e07a-5cb9-a394-f753aed23562",
+          "title": "Preparation",
+          "kind": "straight",
+          "restSeconds": null,
+          "rounds": null,
+          "items": [],
+          "notes": "Easy bike for 3–5 minutes. Ankle rocks ×8/side, adductor rock-back ×8/side, bodyweight squat ×8. Ramp the first lower-body lift before working sets."
+        },
+        {
+          "id": "d89ef2b5-d80a-5e2e-a739-aa86f3db07a2",
+          "title": "Pendulum Squat",
+          "kind": "straight",
+          "restSeconds": 180,
+          "rounds": null,
+          "items": [
+            {
+              "id": "00271344-8124-576e-adeb-0ae18ccfad87",
+              "exerciseId": "545680da-981e-54f3-aedc-df33b0d343a4",
+              "name": "Pendulum Squat",
+              "equipment": "Pendulum Squat",
+              "setup": "Bilateral",
+              "primaryMuscle": "quads",
+              "secondaryMuscles": [
+                "glutes",
+                "adductors"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "ca8b56ca-6973-5f2f-ae40-5139e5f44c56",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f554633f-452a-50a8-a931-3502928af60c",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "dc8bf441-e358-5c0e-a014-6e550708fe8d",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "df4e8c73-780c-5c83-a8bd-d7fd7639d466",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "0ff6db67-c4df-5f3d-a7c6-560503f0697e",
+          "title": "Leg Extension And Curl",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "dd0c6f8c-ba15-5569-aedc-f1d01d3d04cb",
+              "exerciseId": "52347ff1-5241-5a9f-ae28-921f68f89c5b",
+              "name": "Leg Extension",
+              "equipment": "Leg Extension",
+              "setup": "Seated, bilateral",
+              "primaryMuscle": "quads",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "0a4c21cb-784a-5c73-a024-fa0507a3e0ae",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f4ab347a-3055-507a-a7bd-6516b6ad187c",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "be679338-f35d-5317-aa4f-da1d958255ac",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "c71d3bd7-5412-5cae-ad6c-15e5fa41ea4d",
+              "exerciseId": "85b14715-ecd0-599e-aae5-2415b607d4c9",
+              "name": "Seated Leg Curl",
+              "equipment": "Seated Leg Curl",
+              "setup": "Bilateral",
+              "primaryMuscle": "hamstrings",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "d1b80ebc-87df-5451-a574-1b828ac1d01e",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0062980d-08b8-5950-a361-046247094052",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "77fe0abc-740b-59e2-a3c4-f2935ad7e3c9",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Use nearby machines when available."
+        },
+        {
+          "id": "1bdc8769-07d3-5ff4-abfc-dc18ace98f4f",
+          "title": "Calves",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "243ac744-b8f1-5a8b-a080-bbcbd818c9c4",
+              "exerciseId": "7884baa9-251a-5536-ae48-15a0fc864289",
+              "name": "Standing Calf Raise",
+              "equipment": "Standing Calf Raise",
+              "setup": "Bilateral",
+              "primaryMuscle": "calves",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "f29710eb-c7e9-5d8b-a206-d5a17ac46cd4",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f9a871a2-6796-5978-a301-f95f3cfd18c1",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "9d838d80-99ea-559c-adec-635deeabea11",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "ec9b59c2-b770-5b08-a08f-c364719c5ac0",
+          "title": "Hanging Knee Raise",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "db731ef0-02fa-50d5-aee8-9770beb88d80",
+              "exerciseId": "b1c194f7-a490-5d97-a8b4-ea21467e45ab",
+              "name": "Hanging Knee Raise",
+              "equipment": "Pull-Up Bar",
+              "setup": "Hanging, bent knees",
+              "primaryMuscle": "abs",
+              "secondaryMuscles": [
+                "hip_flexors",
+                "grip"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps"
+              ],
+              "sets": [
+                {
+                  "id": "f656a5fe-afa9-54cd-a7e2-ddf5d2fef283",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "4ab7ac84-3329-5a6e-a2a0-fbe5964af321",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "86f3cb51-468f-52d2-a688-47e099779d0c",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "8fe95eae-ef3d-5a72-afb6-c45c735c9f9d",
+          "title": "Cable Chop",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "ed08cd0d-05ab-54ad-aecc-04bd3ceaa11c",
+              "exerciseId": "50a6ed9d-836a-5230-a9a7-2566997b2461",
+              "name": "Cable Chop",
+              "equipment": "Cable Station",
+              "setup": "High to low, both sides",
+              "primaryMuscle": "obliques",
+              "secondaryMuscles": [
+                "core"
+              ],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "bb986abf-18ef-5a68-a5ad-da9bf48c1f22",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "85e2c1b7-ca75-5616-aa44-9453b16ca385",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "682b043d-7e61-558f-ae2a-f8343ce81678",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            }
+          ],
+          "notes": ""
+        }
+      ],
+      "notes": "",
+      "source": null
+    },
+    {
+      "id": "b2037a1d-b697-580e-a712-41e9fcf4619d",
+      "revision": 0,
+      "kind": "planned",
+      "routineId": null,
+      "weekId": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "date": "2026-01-07",
+      "title": "Athletic Conditioning",
+      "focus": "",
+      "blocks": [
+        {
+          "id": "8b152bc6-890e-5c2e-a525-082c356cdd31",
+          "title": "Preparation",
+          "kind": "straight",
+          "restSeconds": null,
+          "rounds": null,
+          "items": [],
+          "notes": "Easy cycling for 5 minutes. Dynamic lunges, ankle rocks and three progressive build-ups. Keep jumps crisp and land under control."
+        },
+        {
+          "id": "0fbb4ed0-a874-53a3-a14d-488c94a5ffda",
+          "title": "Jumps And Slams",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "447226ef-9255-5b73-af43-c0500f3d3013",
+              "exerciseId": "3b8a0a79-07a9-577d-a8f9-78d96c97bb65",
+              "name": "Box Jump",
+              "equipment": "Plyometric Box",
+              "setup": "Step down between repetitions",
+              "primaryMuscle": null,
+              "secondaryMuscles": [
+                "quads",
+                "glutes",
+                "calves"
+              ],
+              "role": "power",
+              "unilateral": false,
+              "trackingFields": [
+                "reps"
+              ],
+              "sets": [
+                {
+                  "id": "c06d226e-a779-52db-a595-aa8db622060f",
+                  "repsMin": 3,
+                  "repsMax": 5,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "402a5b68-2e1c-5277-ad7a-19d2a70ea17e",
+                  "repsMin": 3,
+                  "repsMax": 5,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "00f2eafd-70b5-5256-a1da-fd5b54419eae",
+                  "repsMin": 3,
+                  "repsMax": 5,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "04f7fbd5-0ef5-5ed3-a1a5-3bc815445590",
+              "exerciseId": "51d17b99-7361-55ff-ae9c-9d01670b7275",
+              "name": "Medicine Ball Slam",
+              "equipment": "Slam Ball",
+              "setup": "Clear floor",
+              "primaryMuscle": null,
+              "secondaryMuscles": [
+                "core",
+                "lats",
+                "shoulders"
+              ],
+              "role": "power",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "ec1d174c-1604-5b8d-a4e4-6da65256a089",
+                  "repsMin": 5,
+                  "repsMax": 5,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "bbbb3c1e-bea5-5e93-aa0d-0e1750c03056",
+                  "repsMin": 5,
+                  "repsMax": 5,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "79c2df4f-bb41-58f3-a221-bbd1a828b29d",
+                  "repsMin": 5,
+                  "repsMax": 5,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "4b39c41e-6b49-5285-a5d9-d1be89f7cd8e",
+          "title": "Sled Push",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "6d61d60f-285c-59ea-a6f1-2d70da5d1e5f",
+              "exerciseId": "92e890f0-f8f5-5836-a29c-b2e9b2a5c95c",
+              "name": "Sled Push",
+              "equipment": "Push Sled",
+              "setup": "Clear turf lane",
+              "primaryMuscle": null,
+              "secondaryMuscles": [
+                "quads",
+                "glutes",
+                "calves"
+              ],
+              "role": "conditioning",
+              "unilateral": false,
+              "trackingFields": [
+                "distanceMeters",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "7dbe2193-3382-5b3a-a953-a9ab0a63476f",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 15,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "e3eb5647-6cde-5fdc-af0f-e16dffe4cc3b",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 15,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "d394d209-65da-523b-a0c5-2fdf10ce83cb",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 15,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "54b62fec-ba6c-5f32-ace1-ad59eab7f14d",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": 15,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Choose a load that allows a smooth, repeatable push. Distance in meters."
+        },
+        {
+          "id": "885b4245-2804-5e42-a0f5-16d497311cd5",
+          "title": "Easy Cycling",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "83a59541-8c05-567a-a376-c9c5a5b40587",
+              "exerciseId": "641d029e-0913-58b9-acc4-f8d02d5b85c3",
+              "name": "Stationary Cycling",
+              "equipment": "Stationary Bike",
+              "setup": "",
+              "primaryMuscle": null,
+              "secondaryMuscles": [
+                "quads"
+              ],
+              "role": "conditioning",
+              "unilateral": false,
+              "trackingFields": [
+                "durationSeconds"
+              ],
+              "sets": [
+                {
+                  "id": "b858e2f5-4ff5-5e7d-a57f-59dd63aaa069",
+                  "repsMin": null,
+                  "repsMax": null,
+                  "load": null,
+                  "durationSeconds": 1200,
+                  "distanceMeters": null,
+                  "rir": null,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Conversational effort."
+        }
+      ],
+      "notes": "",
+      "source": null
+    },
+    {
+      "id": "96590452-a616-5e2e-ad03-931a7b705cc8",
+      "revision": 0,
+      "kind": "planned",
+      "routineId": null,
+      "weekId": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "date": "2026-01-08",
+      "title": "Pull",
+      "focus": "",
+      "blocks": [
+        {
+          "id": "e89b6155-9925-5370-a616-62d3847667b7",
+          "title": "Preparation",
+          "kind": "straight",
+          "restSeconds": null,
+          "rounds": null,
+          "items": [],
+          "notes": "Easy row or bike for 3–5 minutes. Cat-cow ×6, thoracic rotation ×6/side, scapular push-up ×8. Ramp the first press and pull before working sets."
+        },
+        {
+          "id": "25e4c649-e677-5aa9-abe1-f3dcd3c57aba",
+          "title": "Chest-Supported Row",
+          "kind": "straight",
+          "restSeconds": 150,
+          "rounds": null,
+          "items": [
+            {
+              "id": "5b63db5d-3164-57d6-ae0e-f9b256bc0229",
+              "exerciseId": "f9d10a98-0810-50c4-af8c-cf0a99a0500d",
+              "name": "Chest-Supported Dumbbell Row",
+              "equipment": "Dumbbell",
+              "setup": "Prone on incline bench",
+              "primaryMuscle": "back",
+              "secondaryMuscles": [
+                "biceps",
+                "rear_delts"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "f7e24fb4-12ad-500f-acff-110a495a47a7",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "e5b513bd-64a5-5a0b-a34c-e944b3269c5b",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0ee17857-4598-5251-ad52-546afb69ce5a",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0e839daa-e42b-5aa6-a737-b6b5f9078e79",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "60b27c2a-d2d4-5c0a-a753-684679f21942",
+          "title": "Lat Pulldown",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "0d848c7c-39bb-5a9f-a332-c23e789bdd0e",
+              "exerciseId": "7c420ccf-b1a2-586d-aee8-73d14ae72ac7",
+              "name": "Lat Pulldown",
+              "equipment": "Cable Station",
+              "setup": "Seated, pronated grip",
+              "primaryMuscle": "back",
+              "secondaryMuscles": [
+                "biceps"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "206afc09-4e99-54a4-a59b-648cfd1dde2c",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "a0e1f020-b0c5-584c-ac1d-1598195b0d59",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "09709a17-ab4d-5103-a389-caffedca6a32",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "88496285-bab4-5a77-a223-df5e44318141",
+          "title": "Cable Curl And Lateral Raise",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "567e6938-7940-52c4-ae00-172012e1550a",
+              "exerciseId": "409df73d-4b08-55a9-a4be-d8f0378b074e",
+              "name": "Bayesian Cable Curl",
+              "equipment": "Cable Station",
+              "setup": "Low pulley, facing away",
+              "primaryMuscle": "biceps",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "b68bb910-19b3-5aea-acbe-a87c874d2d68",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "7dcb090c-0496-5694-a147-a473e1c2a754",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "2dbd5c6e-ed37-5ddf-afa1-671552a51d3e",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            },
+            {
+              "id": "22a6b803-e241-5fb0-ac5f-6f17c1239a2e",
+              "exerciseId": "a1d7d77c-08bd-5dc8-a92b-b1107b236ccb",
+              "name": "Cable Lateral Raise",
+              "equipment": "Cable Station",
+              "setup": "Low pulley, single arm",
+              "primaryMuscle": "side_delts",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "3e2c9524-4e0c-5902-ad6d-e8f6a28531e9",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "6e7a45a2-3c59-53e6-ae8c-4f5fa49a2aff",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "b2cd08f7-27be-56c3-aa44-2dee13efddb3",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "8bcb9966-7f1b-508c-aefb-572d125b130f",
+          "title": "Rear Delts And Abs",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "8d6ef5a1-ceab-5db9-a4ee-ae66bd14266d",
+              "exerciseId": "9690ed71-e46f-50ba-add8-d316c8571642",
+              "name": "Cable Rear Delt Fly",
+              "equipment": "Cable Station",
+              "setup": "Standing",
+              "primaryMuscle": "rear_delts",
+              "secondaryMuscles": [
+                "upper_back"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "683f2a1e-8aa5-5ff1-a97f-a41a8cfa82c8",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "2b1d5b68-5e0e-57eb-ab29-c08158b2ba7a",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "c5318751-091d-5870-a7b1-7fa3c0a5874a",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "61723e94-de5f-5df1-aecf-eab6d9a7b51a",
+              "exerciseId": "73a5793e-f37f-51d5-a93b-1ef9965ece30",
+              "name": "Cable Crunch",
+              "equipment": "Cable Station",
+              "setup": "Kneeling, high pulley and rope",
+              "primaryMuscle": "abs",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "fc8c135e-e8fb-5052-a219-c34019f1590f",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0b96bdb9-85af-557d-aa11-e870022261dc",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "fb5c109d-1cfd-5b46-a5b0-6556cb298299",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        }
+      ],
+      "notes": "",
+      "source": null
+    },
+    {
+      "id": "01729159-b1d4-5c3f-a7dc-20b4ce27ab07",
+      "revision": 0,
+      "kind": "planned",
+      "routineId": null,
+      "weekId": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "date": "2026-01-09",
+      "title": "Posterior-Focused Lower",
+      "focus": "",
+      "blocks": [
+        {
+          "id": "a1266619-2dee-5a52-af14-dcfb56ace1cf",
+          "title": "Preparation",
+          "kind": "straight",
+          "restSeconds": null,
+          "rounds": null,
+          "items": [],
+          "notes": "Easy bike for 3–5 minutes. Ankle rocks ×8/side, adductor rock-back ×8/side, bodyweight squat ×8. Ramp the first lower-body lift before working sets."
+        },
+        {
+          "id": "c22f92fc-ee87-53d5-a77a-22d7f665f097",
+          "title": "Single-Leg RDL",
+          "kind": "straight",
+          "restSeconds": 150,
+          "rounds": null,
+          "items": [
+            {
+              "id": "6a7afcc5-f1d4-5837-a3a9-3c092078eb9f",
+              "exerciseId": "8421b468-d810-587d-ad2b-3eaca7b02eb0",
+              "name": "Single-Leg Kettlebell RDL",
+              "equipment": "Kettlebell",
+              "setup": "One kettlebell, both sides",
+              "primaryMuscle": "hamstrings",
+              "secondaryMuscles": [
+                "glutes",
+                "lower_back"
+              ],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "09fe907d-0e73-5a8e-adef-afd42dcb0cd4",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "211df07e-c559-58af-a116-ae0db861d942",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "9b2e33e3-918f-52e5-a218-98a2954eaf1c",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "cb916825-4e41-5537-a6e8-922485aaa723",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "a1298948-dc6d-5d61-a626-384701118905",
+          "title": "Hack Squat",
+          "kind": "straight",
+          "restSeconds": 180,
+          "rounds": null,
+          "items": [
+            {
+              "id": "b29290cf-31ba-5b55-a4da-079afa1230f8",
+              "exerciseId": "a1ef9c1e-5f51-5351-a483-e0bbfb065a44",
+              "name": "Hack Squat",
+              "equipment": "Hack Squat",
+              "setup": "Bilateral",
+              "primaryMuscle": "quads",
+              "secondaryMuscles": [
+                "glutes",
+                "adductors"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "386a61a9-8458-5254-a233-a34e69ee9d47",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "3c6ad65a-8274-53ac-aded-4268e62d5bd0",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "be11e59b-ab63-567a-ad2b-fcaf13205e73",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "c6f9ee44-196f-5759-a231-09cfd6c38538",
+                  "repsMin": 8,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "1d066272-709a-5ef7-abb5-12d5517ec64f",
+          "title": "Hip Thrust",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "b1e31256-010e-5f44-a353-64586a947ca3",
+              "exerciseId": "71ce12a8-9cd1-5fde-a6c9-73f1af41ac94",
+              "name": "Machine Hip Thrust",
+              "equipment": "Hip Thrust Machine",
+              "setup": "Bilateral",
+              "primaryMuscle": "glutes",
+              "secondaryMuscles": [
+                "hamstrings"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "9ff68950-e8ef-51d8-a163-6768023a66e5",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "5471861a-af3c-54d1-a3a1-9ffef55cf734",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "bf19530e-fb76-5b20-ac93-193b2309e8dc",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "d135c207-3f83-5e10-a48c-fa014feebd59",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "edc2b7c8-7c26-5295-a852-39154b1126a9",
+          "title": "Walking Lunges",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "69a3d64e-b43b-539d-a1f2-ad5529cbcce8",
+              "exerciseId": "7d81ad2c-8b6f-5bd5-adaa-c40d20a84b5c",
+              "name": "Dumbbell Walking Lunge",
+              "equipment": "Dumbbell",
+              "setup": "Alternating steps",
+              "primaryMuscle": "quads",
+              "secondaryMuscles": [
+                "glutes",
+                "adductors"
+              ],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "98913b40-c18e-50e0-ad3a-f8f056bfe40e",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "35c7def0-222d-53cb-ad2b-10d7c3f44c1f",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f3080f41-b1c9-5921-a2fe-135b72f31ee9",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "844a579a-df06-54d8-ab5f-04ae51d1c6a9",
+          "title": "Hamstrings And Calves",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "71e5ccb3-5f90-588b-aada-9b8cb28b3333",
+              "exerciseId": "85b14715-ecd0-599e-aae5-2415b607d4c9",
+              "name": "Seated Leg Curl",
+              "equipment": "Seated Leg Curl",
+              "setup": "Bilateral",
+              "primaryMuscle": "hamstrings",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "d95b137a-0bcf-59df-a739-3a753e0c15f2",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "533016d9-024c-5516-a3fb-6df50eccf7e8",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "76614032-4973-509a-afc2-a75611d8b51c",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "ba47a706-0018-5693-a997-43c6a135ae36",
+              "exerciseId": "7884baa9-251a-5536-ae48-15a0fc864289",
+              "name": "Standing Calf Raise",
+              "equipment": "Standing Calf Raise",
+              "setup": "Bilateral",
+              "primaryMuscle": "calves",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "5a923d65-d475-58a3-a84e-185f6c89be9d",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "3ddc082d-5e2b-577a-a9d7-b2dd25eb1f10",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f844633b-09e2-568f-a86e-c3438efe8f3d",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Separate these if the machines are not nearby."
+        }
+      ],
+      "notes": "",
+      "source": null
+    },
+    {
+      "id": "51751eb5-a95e-5af2-a86e-47ebe791e67b",
+      "revision": 0,
+      "kind": "planned",
+      "routineId": null,
+      "weekId": "83ff4ffb-9d2b-54f0-a123-e3b14e504287",
+      "date": "2026-01-10",
+      "title": "Push And Arms",
+      "focus": "",
+      "blocks": [
+        {
+          "id": "524eed7e-b309-551f-a2fd-d1964b050f42",
+          "title": "Preparation",
+          "kind": "straight",
+          "restSeconds": null,
+          "rounds": null,
+          "items": [],
+          "notes": "Easy row or bike for 3–5 minutes. Cat-cow ×6, thoracic rotation ×6/side, scapular push-up ×8. Ramp the first press and pull before working sets."
+        },
+        {
+          "id": "90d10065-266e-53ac-a3cc-74179c95ea0d",
+          "title": "Incline Press",
+          "kind": "straight",
+          "restSeconds": 150,
+          "rounds": null,
+          "items": [
+            {
+              "id": "72c5d3b2-11e9-5840-af8d-b1643826bc2a",
+              "exerciseId": "9e285e22-8760-55d0-ac0d-4d32c8a1fa38",
+              "name": "Incline Dumbbell Press",
+              "equipment": "Dumbbell",
+              "setup": "Incline bench",
+              "primaryMuscle": "chest",
+              "secondaryMuscles": [
+                "front_delts",
+                "triceps"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "5e3081ae-3d4b-584e-a05f-01148cf1c51b",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "753c21bf-903d-5d46-ab72-cfd728060e62",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "e9b11770-62aa-5db3-a83b-b91b4c0aabb8",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0521ab9e-aa1c-5ea8-afa9-0d9f2022a8a3",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "aea06933-e5be-5e56-ab5b-729f2beb4637",
+          "title": "Dips",
+          "kind": "straight",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "efbe8ebc-3511-55ed-a5d9-3aed9493d2e8",
+              "exerciseId": "900440ed-f278-5e64-aa22-a7677f5d4370",
+              "name": "Parallel-Bar Dip",
+              "equipment": "Parallel Bars",
+              "setup": "Forward torso lean",
+              "primaryMuscle": "chest",
+              "secondaryMuscles": [
+                "triceps",
+                "front_delts"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps"
+              ],
+              "sets": [
+                {
+                  "id": "ba0d717c-766a-5bb8-a9b8-efbd3d8c4c78",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "1fe13128-964b-5a88-a01c-d28fb70f7a3f",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f7a177c5-fba3-521d-ab9e-20cf20dacbad",
+                  "repsMin": 6,
+                  "repsMax": 10,
+                  "load": null,
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "654f2038-3229-5ddd-a9fa-6614bb67ad33",
+          "title": "Dumbbell Press And Curl",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "e3f9ab89-a10f-5361-afd2-8965b63af47b",
+              "exerciseId": "09693d50-25e1-5ea0-acdf-8d268e53ce4a",
+              "name": "Seated Dumbbell Overhead Press",
+              "equipment": "Dumbbell",
+              "setup": "Back-supported bench",
+              "primaryMuscle": "front_delts",
+              "secondaryMuscles": [
+                "side_delts",
+                "triceps"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "eaebb266-5112-512d-a885-8d88a5d8f03d",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "6de27b6d-cd4b-5218-a0cb-1dca9210ed68",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "77436e06-b744-5a04-ac8c-0035e7ba4532",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "f9b33c42-6508-54fd-ae6e-7dd67216e5b5",
+              "exerciseId": "4d9eb9a9-a3db-554f-a50f-f9ff2b2e7e49",
+              "name": "Dumbbell Curl",
+              "equipment": "Dumbbell",
+              "setup": "Standing, supinated grip",
+              "primaryMuscle": "biceps",
+              "secondaryMuscles": [
+                "forearms"
+              ],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "593c4fb9-2672-503b-a6f5-41c5714d6303",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "f8be46b3-e462-52ad-abe2-0542a5858baf",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "0d512406-7ae3-5b6b-a6bb-bffd40e8223a",
+                  "repsMin": 8,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "per_hand"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "2ba9511a-eee6-59a2-aa4b-05d432e7df70",
+          "title": "Cable Delts And Triceps",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "9bf50226-e51a-5162-a1db-f688279ba57c",
+              "exerciseId": "a1d7d77c-08bd-5dc8-a92b-b1107b236ccb",
+              "name": "Cable Lateral Raise",
+              "equipment": "Cable Station",
+              "setup": "Low pulley, single arm",
+              "primaryMuscle": "side_delts",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "2462dbc4-b342-5720-a600-a40fd9ec29d9",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "31fa24ad-3a9d-5a64-afb8-fb15c3fb0721",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "dc6f8c71-a945-5aaa-ab4b-e5c9db649367",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "604163e3-7aeb-5c80-a3f7-394ecc5010ad",
+                  "repsMin": 12,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            },
+            {
+              "id": "dd270e54-953c-5ee0-af8c-5063c27a3271",
+              "exerciseId": "ef3b2052-657c-517c-a2f8-c1c3f7e644a0",
+              "name": "Overhead Cable Triceps Extension",
+              "equipment": "Cable Station",
+              "setup": "Rope attachment",
+              "primaryMuscle": "triceps",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "85812b1b-78d6-5644-a8de-e88fd5aa7c74",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "825468d6-33d8-5fd2-aedd-9f7ee032f40a",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "e6823175-bd91-55af-afe2-fcf38d7ddad0",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            }
+          ],
+          "notes": "Complete the fourth lateral-raise set on its own."
+        },
+        {
+          "id": "b79323cf-bb74-5643-a514-1eddf3b9ecdc",
+          "title": "High Cable Pair",
+          "kind": "superset",
+          "restSeconds": 120,
+          "rounds": null,
+          "items": [
+            {
+              "id": "6756e6f7-241a-5258-a951-24565ed6fc78",
+              "exerciseId": "7d60a134-4991-5b69-a4cb-4af96aa6e915",
+              "name": "Cable Triceps Pushdown",
+              "equipment": "Cable Station",
+              "setup": "High pulley, rope attachment",
+              "primaryMuscle": "triceps",
+              "secondaryMuscles": [],
+              "role": "lifting",
+              "unilateral": false,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "e01f2986-0ee9-5cdf-a77a-6e467ef22d2b",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "349a7c69-67d0-56d3-a9be-8de01256874b",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "b26aa5ed-82e3-55b2-a076-1e6b477dabd1",
+                  "repsMin": 10,
+                  "repsMax": 15,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": ""
+            },
+            {
+              "id": "1deba532-9ee1-5b81-a43a-4482ffe7e172",
+              "exerciseId": "50a6ed9d-836a-5230-a9a7-2566997b2461",
+              "name": "Cable Chop",
+              "equipment": "Cable Station",
+              "setup": "High to low, both sides",
+              "primaryMuscle": "obliques",
+              "secondaryMuscles": [
+                "core"
+              ],
+              "role": "lifting",
+              "unilateral": true,
+              "trackingFields": [
+                "reps",
+                "load"
+              ],
+              "sets": [
+                {
+                  "id": "bf18e388-5f99-5cdc-a5b9-9e90936dca79",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "082c85ff-cfd2-5bd3-a661-89f621bf80b8",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                },
+                {
+                  "id": "999a2c63-1ec7-59d4-a70e-a827fc9f8253",
+                  "repsMin": 10,
+                  "repsMax": 12,
+                  "load": {
+                    "value": null,
+                    "unit": "lb",
+                    "basis": "total"
+                  },
+                  "durationSeconds": null,
+                  "distanceMeters": null,
+                  "rir": 2,
+                  "tempo": "",
+                  "kind": "working",
+                  "notes": ""
+                }
+              ],
+              "notes": "Repetitions are per side. Complete both sides for each set."
+            }
+          ],
+          "notes": ""
+        }
+      ],
+      "notes": "",
+      "source": null
+    }
+  ],
+  "sessions": [],
+  "trainingDefaults": {
+    "revision": 0,
+    "targets": {
+      "chest": 14,
+      "back": 14,
+      "front_delts": 3,
+      "side_delts": 10,
+      "rear_delts": 6,
+      "biceps": 9,
+      "triceps": 9,
+      "quads": 14,
+      "hamstrings": 10,
+      "glutes": 4,
+      "calves": 6,
+      "abs": 6,
+      "obliques": 6
+    }
+  }
+}

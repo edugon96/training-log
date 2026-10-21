@@ -1,0 +1,13 @@
+.env*
+.local/
+.agents/
+.next/
+node_modules/
+data/
+test-results/
+playwright-report/
+coverage/
+tests/
+*.dump
+*.tsbuildinfo
+.git/
