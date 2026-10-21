@@ -366,6 +366,8 @@ test("one workout screen, manual timing, mobile units, protected completed edits
   ).toBeVisible()
   await page.getByRole("button", { name: "Week actions", exact: true }).tap()
   const handle = page.locator(".mobile-panel-grip").last()
+  // Wait for the opening animation before measuring the drag origin.
+  await handle.click({ trial: true })
   const box = (await handle.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
