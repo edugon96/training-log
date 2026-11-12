@@ -40,7 +40,7 @@ Keep the workout clock and rest countdown close to your set log. Choose presets 
 |---|---|
 | ![Muscle ledger comparing planned sets, completed sets, and goals](docs/images/ledger.png) | ![Rest timer with a radial dial and duration presets](docs/images/timer.png) |
 
-[Editable Figma mockups and image credits](docs/images/README.md)
+[Mockup credits](docs/images/README.md)
 
 ## API and AI Access
 
