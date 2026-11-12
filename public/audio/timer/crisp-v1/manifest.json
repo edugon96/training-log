@@ -1,0 +1,36 @@
+{
+  "repository": "https://github.com/SatyamVyas04/sensory-ui",
+  "revision": "20c0c763c0d169ccb7654e11f0f4dd19acac2b37",
+  "theme": "crisp",
+  "sampleRate": 44100,
+  "assets": {
+    "tick": {
+      "role": "interaction.subtle",
+      "frames": 980,
+      "duration": 0.022222222222222223,
+      "peak": 0.06287186592817307,
+      "sha256": "56cb2894df4d9345fabc83e615e17ce90e3d835fa0bce2ce6aeb2e0c16c18caf"
+    },
+    "start": {
+      "role": "interaction.confirm",
+      "frames": 1139,
+      "duration": 0.02582766439909297,
+      "peak": 0.07948002219200134,
+      "sha256": "77637a8b2a2eeb1d0dfc630c5de999035bd84e3c135a7e35b00d9f24261cf2a0"
+    },
+    "countdown": {
+      "role": "notification.info",
+      "frames": 8248,
+      "duration": 0.18702947845804987,
+      "peak": 0.3372687101364136,
+      "sha256": "87902741f23330eb16888bf5ccb7bdf087692122a5e973994dd53717c4da2573"
+    },
+    "finish": {
+      "role": "notification.success",
+      "frames": 23947,
+      "duration": 0.5430158730158731,
+      "peak": 0.3447354733943939,
+      "sha256": "9dd43491d3de3c99dbf40dff01e7628240fe622b3330336be82d3b50668f6db9"
+    }
+  }
+}

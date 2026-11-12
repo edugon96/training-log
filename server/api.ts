@@ -2,14 +2,14 @@ import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import { isAPIError } from "better-auth/api";
-import { ApiKeyInfo, DateOnly, ImportManifest, Scope, TrainingDefaults, TimerSettings, type ImportData } from "../contracts/models";
+import { ApiKeyInfo, DateOnly, DeleteRequest, ImportManifest, Scope, TrainingDefaults, TimerSettings, type ImportData } from "../contracts/models";
 import { buildCatalog } from "../contracts/training";
 import { getDb, withTransaction, type Store } from "./db";
 import { getAuth, transactionAuth } from "./auth";
 import { authenticate, authorize, checkOrigin, fingerprint, seal, unseal, canonical, type Actor } from "./security";
 import { demand, HttpError } from "./errors";
-import { list, requireRecord, save, changes, recordAudit, resourceNames, type Resource } from "./repository";
-import { cloneBlocks, computeLedger, findPrevious, startSession } from "./domain";
+import { list, previousBatch, requireRecord, save, changes, recordAudit, resourceNames, deletionPreview, deleteWorkout, assertNotDeleted, type Resource, type ListFilter } from "./repository";
+import { cloneBlocks, computeLedger, startSession } from "./domain";
 import { receipts, importSources } from "./schema";
 import { getTrainingDefaults, saveTrainingDefaults, storedTrainingDefaults, normalizeEquipment, normalizeExercise } from "./training";
 import { getTimerSettings, saveTimerSettings, storedTimerSettings } from "./timers";
@@ -157,16 +157,21 @@ async function dispatch(db: Store, request: Request, actor: Actor, path: string[
     }
   }
   if (first === "changes" && path.length === 1 && method === "GET") return ok(await changes(db, actor.ownerId));
-  if (first === "history" && path.length === 1 && method === "GET") {
-    const exercise = await requireRecord(db, actor.ownerId, "exercises", Id.parse(url.searchParams.get("exerciseId")));
+  if (first === "history" && (path.length === 1 || (path.length === 2 && id === "batch")) && method === "GET") {
+    const batch = id === "batch";
+    const ids = [...new Set(batch
+      ? z.array(Id).min(1).max(100).parse(url.searchParams.getAll("exerciseId"))
+      : [Id.parse(url.searchParams.get("exerciseId"))])];
+    const exercises = await Promise.all(ids.map(exerciseId => requireRecord(db, actor.ownerId, "exercises", exerciseId)));
     const before = DateOnly.parse(url.searchParams.get("before"));
     const routineId = url.searchParams.get("routineId");
     if (routineId) await requireRecord(db, actor.ownerId, "workouts", Id.parse(routineId));
-    return ok(findPrevious(exercise, routineId, before, await list(db, actor.ownerId, "sessions")));
+    const previous = await previousBatch(db, actor.ownerId, exercises, routineId, before);
+    return ok(batch ? previous : previous[ids[0]]);
   }
   if (first === "ledger" && path.length === 1 && method === "GET") {
     const week = await requireRecord(db, actor.ownerId, "weeks", Id.parse(url.searchParams.get("weekId")));
-    return ok(computeLedger(week, await list(db, actor.ownerId, "workouts"), await list(db, actor.ownerId, "sessions")));
+    return ok(computeLedger(week, await list(db, actor.ownerId, "workouts", { weekId: week.id, kind: "planned" }), await list(db, actor.ownerId, "sessions", { weekId: week.id })));
   }
   if (first === "export" && path.length === 1 && method === "GET") {
     const data = await exportOwner(db, actor.ownerId);
@@ -203,19 +208,32 @@ async function dispatch(db: Store, request: Request, actor: Actor, path: string[
     }
   }
   if (resource(first)) {
+    if (first === "workouts" || first === "sessions") {
+      if (path.length === 3 && action === "deletion" && method === "GET")
+        return ok(await deletionPreview(db, actor.ownerId, first, Id.parse(id)));
+      if (path.length === 2 && method === "DELETE") {
+        const input = DeleteRequest.parse(body);
+        demand(input.expected.id === Id.parse(id) && input.expected.resource === first, 422, "id_mismatch", "Confirmation must match the selected workout");
+        return ok(await deleteWorkout(db, actor, input.expected));
+      }
+    }
     if (path.length === 1 && method === "GET") {
-      let records = await list(db, actor.ownerId, first);
+      const filter: ListFilter = {};
       const weekId = url.searchParams.get("weekId");
       const kind = url.searchParams.get("kind");
       if (weekId) {
         await requireRecord(db, actor.ownerId, "weeks", Id.parse(weekId));
-        records = records.filter(r => "weekId" in r && r.weekId === weekId);
+        filter.weekId = weekId;
       }
       if (kind) {
-        z.enum(["routine", "planned"]).parse(kind);
-        records = records.filter(r => "kind" in r && r.kind === kind);
+        filter.kind = z.enum(["routine", "planned"]).parse(kind);
       }
-      return ok(records);
+      const workoutId = url.searchParams.get("workoutId");
+      if (workoutId && first === "sessions") {
+        await requireRecord(db, actor.ownerId, "workouts", Id.parse(workoutId));
+        filter.workoutId = workoutId;
+      }
+      return ok(await list(db, actor.ownerId, first, filter));
     }
     if (path.length === 2 && method === "GET") return ok(await requireRecord(db, actor.ownerId, first, Id.parse(id)));
     if (path.length === 1 && method === "POST") {
@@ -239,7 +257,7 @@ async function dispatch(db: Store, request: Request, actor: Actor, path: string[
       const next = await save(db, actor, "weeks", { ...week, id: randomUUID(), revision: 0, startDate: input.startDate,
         title: `Week of ${input.startDate}`, targets: defaults.targets }, null);
       const delta = Date.parse(input.startDate) - Date.parse(week.startDate);
-      for (const workout of (await list(db, actor.ownerId, "workouts")).filter(w => w.weekId === week.id && w.kind === "planned")) {
+      for (const workout of await list(db, actor.ownerId, "workouts", { weekId: week.id, kind: "planned" })) {
         await save(db, actor, "workouts", { ...workout, id: randomUUID(), revision: 0, weekId: next.id,
           date: workout.date ? new Date(Date.parse(workout.date) + delta).toISOString().slice(0, 10) : null,
           blocks: cloneBlocks(workout.blocks), source: null }, null);
@@ -259,8 +277,9 @@ export async function handleApi(request: Request, path: string[]) {
   try {
     const actor = await authenticate(request);
     authorize(actor, requiredScope(path, request.method), path[0] === "keys" || path[0] === "import");
+    if (request.method === "DELETE" && path[0] === "workouts") authorize(actor, "results:write");
     if (!isWrite(request.method)) {
-      if (["export", "ledger", "history"].includes(path[0])) {
+      if (["export", "ledger", "history"].includes(path[0]) || path[2] === "deletion") {
         return response(await withTransaction(async (tx, client) => {
           await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
           return dispatch(tx, request, actor, path, null);
@@ -282,6 +301,13 @@ export async function handleApi(request: Request, path: string[]) {
       const [receipt] = await tx.select().from(receipts).where(and(eq(receipts.ownerId, actor.ownerId), eq(receipts.key, key)));
       if (receipt) {
         demand(receipt.hash === hash, 409, "idempotency_conflict", "This idempotency key was used for another request");
+        if (path[0] === "workouts" && path[2] === "start") await assertNotDeleted(tx, actor.ownerId, "workouts", Id.parse(path[1]));
+        // Replaying an old save must not return deleted data as a current record.
+        if (resource(path[0]) && (request.method === "POST" || request.method === "PUT") && path.length <= 2) {
+          const value = (body as { value?: { id?: string; workoutId?: string } })?.value;
+          if (value?.id && Id.safeParse(value.id).success) await assertNotDeleted(tx, actor.ownerId, path[0], value.id);
+          if (path[0] === "sessions" && value?.workoutId && Id.safeParse(value.workoutId).success) await assertNotDeleted(tx, actor.ownerId, "workouts", value.workoutId);
+        }
         return { body: unseal(receipt.response), status: receipt.status };
       }
       const result = await dispatch(tx, request, actor, path, body, path[0] === "keys" ? transactionAuth(client) : getAuth());

@@ -15,7 +15,7 @@ export function workoutDraft(
     performedOn: workout.date ?? new Date().toLocaleDateString("en-CA"),
     title: workout.title,
     status: "active",
-    loggingMode: "automatic",
+    loggingMode: "checked",
     blocks: structuredClone(workout.blocks).map((block) => ({
       ...block,
       items: block.items.map((item) => ({

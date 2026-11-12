@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Copy,
   ListChecks,
-  MoreHorizontal,
   Plus,
   Settings2,
 } from "lucide-react"
@@ -130,7 +129,7 @@ export function WeekHome(props: Props) {
         </div>
         <ActionMenu
           label="Week actions"
-          trigger={<MoreHorizontal size={22} />}
+
           actions={[
             {
               label: "Muscle ledger",
@@ -341,6 +340,14 @@ export function WeekHome(props: Props) {
                   <ChevronRight size={18} />
                 </button>
               ))}
+            <Button
+              className="new-week-workout"
+              variant="outline"
+              disabled={busy || !canManage}
+              onClick={props.onNewWorkout}
+            >
+              <Plus size={17} /> New workout
+            </Button>
             {!days.length && (
               <Empty title="A clear week ahead">
                 <p>Add a workout or repeat a previous week to get started.</p>

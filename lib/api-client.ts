@@ -81,7 +81,9 @@ export const listWorkouts = (query: { weekId?: string; kind?: string } = {}) =>
     client.GET("/api/v1/workouts", { params: { query } }),
     z.array(m.Workout)
   )
-export const listSessions = (query: { weekId?: string } = {}) =>
+export const listSessions = (
+  query: { weekId?: string; workoutId?: string } = {}
+) =>
   parse(
     client.GET("/api/v1/sessions", { params: { query } }),
     z.array(m.Session)
@@ -96,6 +98,26 @@ export const getSession = (id: string) =>
     client.GET("/api/v1/sessions/{id}", { params: { path: { id } } }),
     m.Session
   )
+export function getDeletionPreview(
+  resource: "workouts" | "sessions",
+  id: string
+) {
+  return parse(
+    client.GET(`/api/v1/${resource}/{id}/deletion`, {
+      params: { path: { id } },
+    }),
+    m.DeletionSnapshot
+  )
+}
+export function deleteWorkout(expected: m.DeletionPreview, key: string) {
+  return parse(
+    client.DELETE(`/api/v1/${expected.resource}/{id}`, {
+      params: { path: { id: expected.id }, header: headers(key) },
+      body: { expected },
+    }),
+    m.DeleteResult
+  )
+}
 export function saveEquipment(value: m.EquipmentRecord, key?: string) {
   return parse(
     value.revision === 0
@@ -195,6 +217,41 @@ export const previous = (
     }),
     m.Previous
   )
+const previousRequests = new Map<string, Promise<m.PreviousBatchRecord>>()
+export function previousBatch(
+  ownerId: string,
+  exerciseIds: string[],
+  routineId: string | null,
+  before: string
+): Promise<m.PreviousBatchRecord> {
+  const ids = [...new Set(exerciseIds)].sort()
+  const key = JSON.stringify([ownerId, ids, routineId, before])
+  const pending = previousRequests.get(key)
+  if (pending) return pending
+  const run = async () => {
+    const batches: m.PreviousBatchRecord[] = []
+    for (let offset = 0; offset < ids.length; offset += 100) {
+      batches.push(
+        await parse(
+          client.GET("/api/v1/history/batch", {
+            params: {
+              query: {
+                exerciseId: ids.slice(offset, offset + 100),
+                ...(routineId ? { routineId } : {}),
+                before,
+              },
+            },
+          }),
+          m.PreviousBatch
+        )
+      )
+    }
+    return Object.assign({}, ...batches)
+  }
+  const request = run().finally(() => previousRequests.delete(key))
+  previousRequests.set(key, request)
+  return request
+}
 export const ledger = (weekId: string) =>
   parse(
     client.GET("/api/v1/ledger", { params: { query: { weekId } } }),
@@ -258,6 +315,8 @@ export const signIn = (email: string, password: string) =>
   authRequest("sign-in/email", { email, password })
 export const signOut = () => authRequest("sign-out", {})
 export const api = {
+  getDeletionPreview,
+  deleteWorkout,
   getTimerSettings,
   saveTimerSettings,
   getTrainingDefaults,
@@ -279,6 +338,7 @@ export const api = {
   getSession,
   saveSession,
   previous,
+  previousBatch,
   ledger,
   changes,
   listKeys,

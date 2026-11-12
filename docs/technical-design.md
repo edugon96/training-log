@@ -48,9 +48,9 @@ Optional `userNotes` keep newly written personal notes separate from imported co
 
 The API lives under `/api/v1`. [public/openapi.json](../public/openapi.json) is generated from the shared schemas, and [contracts/api.d.ts](../contracts/api.d.ts) is generated from OpenAPI. The web client uses `openapi-fetch` plus runtime response validation.
 
-Mutations require an `Idempotency-Key`. Updates include the expected revision. A stale revision returns HTTP 409 and the current record. Reusing an idempotency key with a different request also returns 409. Resource identifiers referenced in a request must belong to the current owner.
+Training mutations require an `Idempotency-Key`. Updates include the expected revision. A stale revision returns HTTP 409 and the current record. Reusing an idempotency key with a different request also returns 409. Resource identifiers referenced in a request must belong to the current owner. Device notification routes use their own increasing timer sequence and require a browser session.
 
-Full-record updates are deliberate for this prototype. They simplify offline snapshots and conflict detection. The tradeoff is coarse-grained conflicts when two clients edit different fields in the same session.
+The API accepts full records with revision checks. The browser stores the acknowledged baseline and local intent separately, so it can merge individual field changes after a revision conflict without overwriting unrelated changes.
 
 ## Authentication And Authorization
 
@@ -64,15 +64,19 @@ No database credentials or API keys are embedded in the browser bundle. Local se
 
 Dexie stores opened sessions and pending writes in IndexedDB, partitioned by owner. Each outgoing request has a persisted request snapshot and retry key. A failed connection retries that exact request. Edits made during an upload remain as a newer draft.
 
-After a successful save, newer drafts receive the returned server revision and stay queued. HTTP 409 stops automatic replacement. The user explicitly keeps local work or adopts the latest server record. Cache clearing is blocked while pending writes exist.
+After a successful save, edits made during upload merge over the acknowledgement and remain queued. A revision conflict merges only locally changed fields over the current server record and retries automatically. Same-field edits use last accepted server save. A shared foreground worker owns retries and resumes on reconnect, focus and visibility. Navigation waits for device persistence. Legacy snapshots without baselines are archived, with only known group ordering recovered automatically. Cache clearing remains blocked while unsaved work exists.
 
 A service worker caches the public application shell and static assets. It never caches private API responses. Offline authentication is device-local continuity for an already opened session, not authorization to write to the server.
 
+Save acknowledgements update the affected cached record and visible state without reloading the entire library, workout list or session history. Newer local edits merge over the acknowledged revision. Foreground and open events reconcile remote changes without polling. An active workout keeps its mounted editor and scroll position.
+
 ## History And Ledger
 
-History selects completed reported results before the requested date, matching exercise/setup identity. Routine matches take priority over other routines. Missing or uncertain actuals remain notes.
+History selects the latest session with completed reported results before the requested date, matching exercise/setup identity across routines. The routine match is descriptive and never overrides recency. Results follow target order, with target metadata for matching warm-up, normal, failure and drop sets. Missing or uncertain actuals remain notes. The client refreshes history when movements change, connectivity returns or the app returns to the foreground, and retains an owner-scoped offline copy.
 
 Verified library corrections can retain exact legacy identity tuples in optional exercise `historyAliases`. Matching never follows aliases transitively or guesses equivalence from a display name. Alias references are owner-validated and imports restore them after all exercise identities exist. Historical session snapshots, results and muscle assignments stay unchanged.
+
+Week and workout filters run in PostgreSQL before rows cross the database connection. Batched history selects the latest eligible session for each requested movement in one query, then applies the shared previous-performance rules. Owner/week, owner/workout and history-date expression indexes support these reads. The ledger endpoint reads only its requested week's records. Autosave invalidates one debounced ledger read instead of reloading all resources and issuing duplicate ledger requests.
 
 The ledger credits completed working targets on lifting items with a primary muscle. Unilateral work is credited once per prescribed set. Session completion alone does not add credit. The web client displays editable targets separately from totals.
 
@@ -86,9 +90,15 @@ Import is additive and idempotent. Existing conflicting data is not overwritten.
 
 ## Local Runtime And Hosting
 
+Screen wake uses one visible-app lifecycle with foreground, page restoration and user-interaction recovery. Unexpected releases allow one delayed reacquisition per foreground or interaction cycle. Device-denied requests do not enter a retry loop. Web Audio unlocks inside the initiating user gesture and schedules beeps at three, two and one seconds remaining, then a buzz at the absolute deadline. Pausing, resetting or changing the deadline cancels obsolete audio nodes.
+
+Web Push subscriptions and the latest per-device timer generation live in two narrow PostgreSQL tables. Vercel Workflow sleeps until the deadline without database polling. Its delivery step locks the device and timer row, verifies ownership, enabled state, sequence and expiry, then sends Web Push. Cancelling or replacing a timer invalidates the old generation. Natural completion leaves the notification eligible. The service worker displays every received push. It silences the notification when the visible app confirms matching countdown audio or intentionally disabled sound. Otherwise it uses the operating system's standard alert. Small notification writes use keepalive and bounded retries, including a flush when the page hides. A not-yet-saved session uses a generic week link until its server identity exists. Notification failure never blocks local logging or the countdown.
+
 Node 24, PostgreSQL 17 through Docker Compose, and one Next.js process form the local runtime. PostgreSQL binds only to loopback.
 
 Vercel hosts the deployed app with managed Neon PostgreSQL. Production and local Docker data remain separate. Production secrets are server-only and are excluded from preview environments. Releases stage a production build, verify it, then promote the same build. Local database files cannot be deployed as Vercel storage.
+
+Push requires server-side `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`. Keep each environment's keys stable for its existing subscriptions. `withWorkflow` builds the durable workflow routes with the app. No cron or database polling is needed for timer delivery.
 
 ## Validation
 

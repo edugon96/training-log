@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import { Drawer } from "vaul"
-import { X, type LucideIcon } from "lucide-react"
+import { MoreVertical, X, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -47,12 +47,14 @@ export function ResponsivePanel({
   children,
   onClose,
   dirty = false,
+  editor = false,
 }: {
   title: string
   description?: string
   children: ReactNode
   onClose: () => void
   dirty?: boolean
+  editor?: boolean
 }) {
   const mobile = useMobilePanel()
   const depth = useContext(PanelDepth)
@@ -75,7 +77,11 @@ export function ResponsivePanel({
         >
           <Drawer.Portal>
             <Drawer.Overlay className="mobile-panel-overlay" />
-            <Drawer.Content className="mobile-panel">
+            <Drawer.Content
+              className={["mobile-panel", editor && "workout-editor-panel"]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <div className="mobile-panel-grip">
                 <Drawer.Handle aria-label="Drag down to close" />
               </div>
@@ -104,7 +110,11 @@ export function ResponsivePanel({
             if (!open) close()
           }}
         >
-          <DialogContent className="tracker-dialog">
+          <DialogContent
+            className={["tracker-dialog", editor && "workout-editor-panel"]
+              .filter(Boolean)
+              .join(" ")}
+          >
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription className={description ? "" : "sr-only"}>
@@ -147,11 +157,9 @@ export type MenuAction = {
 }
 export function ActionMenu({
   label,
-  trigger,
   actions,
 }: {
   label: string
-  trigger: ReactNode
   actions: MenuAction[]
 }) {
   const [open, setOpen] = useState(false)
@@ -162,11 +170,12 @@ export function ActionMenu({
         <Button
           variant="ghost"
           size="icon"
+          className="overflow-menu-trigger"
           aria-label={label}
           aria-expanded={open}
           onClick={() => setOpen(true)}
         >
-          {trigger}
+          <MoreVertical size={20} aria-hidden="true" />
         </Button>
         {open && (
           <ResponsivePanel title={label} onClose={() => setOpen(false)}>
@@ -199,8 +208,13 @@ export function ActionMenu({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={label}>
-          {trigger}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="overflow-menu-trigger"
+          aria-label={label}
+        >
+          <MoreVertical size={20} aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="action-menu">

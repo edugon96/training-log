@@ -41,7 +41,9 @@ After the staged check passes, promote the exact tested production deployment wi
 
 Run `npm audit` before release. Do not apply forced major downgrades to silence findings.
 
-The October 21, 2026 audit reports 13 findings across development-tool chains: nine high findings from Next's ESLint plugin and shadcn tooling through `braces`, and four moderate findings from Drizzle Kit through an older `esbuild`. The former involves untrusted deeply nested glob patterns. The latter involves the esbuild development server. These tools are not application request handlers and are not exposed as development servers in production. The audit offers incompatible downgrades rather than compatible fixes. Restrict development tools to trusted input and review upstream fixes before the next dependency update. This is a documented outstanding risk, not a clean security audit. Keep shadcn as a build dependency because the application imports its Tailwind utilities.
+The November 12, 2026 publication check reports 44 dependency findings: 24 high, 18 moderate and two low. An audit omitting development dependencies reports 32 findings (23 high and nine moderate). These counts include propagated dependency-chain findings, not 44 independently exploitable application defects.
+
+The newly included Workflow dependency brings older nested `undici` and `zod` versions into the installation. npm proposes a Workflow upgrade from 5.2.3 to 5.5.0 for part of this chain. Its compatibility and deployment behavior have not been validated in this publication task. Other findings involve development tooling, including Drizzle Kit. Do not describe this release as having a clean dependency audit. Review and validate compatible dependency updates before a subsequent production release.
 
 ## Catalog Changes
 

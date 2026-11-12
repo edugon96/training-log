@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { getDb, getPool, withTransaction } from "./db";
 import { transactionAuth } from "./auth";
-import { save, list } from "./repository";
+import { save, list, deletionPreview, deleteWorkout } from "./repository";
 import { defaultTargets, makeItem, type EquipmentRecord, type ExerciseRecord } from "../contracts/models";
 import type { Actor } from "./security";
 import { exportOwner, importOwner } from "./api";
@@ -25,6 +25,40 @@ const actor = (): Actor => {
 };
 const equipment = (): EquipmentRecord => ({ id: randomUUID(), revision: 0, name: "Test cable", model: "", notes: "", startingResistance: null, archived: false });
 describe.skipIf(!enabled)("repository with real PostgreSQL, all changes rolled back", () => {
+  it("deletes only the confirmed workout graph and prevents stale resurrection", async () => {
+    await testTransaction(async tx => {
+      const owner = actor(), other = actor();
+      await importOwner(tx, owner, buildHybridExample());
+      const plans = (await list(tx, owner.ownerId, "workouts")).filter(w => w.kind === "planned");
+      const plan = plans[0];
+      const untouched = plans[1];
+      let session = await save(tx, owner, "sessions", startSession(plan, plan.date!), null);
+      const initial = await deletionPreview(tx, owner.ownerId, "workouts", plan.id);
+      await expect(deletionPreview(tx, other.ownerId, "workouts", plan.id)).rejects.toThrow("not found");
+      session.results[0].reps = 8;
+      session.results[0].load = { value: 100, unit: "lb", basis: "total" };
+      session = await save(tx, owner, "sessions", session, session.revision);
+      await expect(deleteWorkout(tx, owner, initial)).rejects.toThrow("changed");
+      const current = await deletionPreview(tx, owner.ownerId, "workouts", plan.id);
+      expect(current.loggedSets).toBe(1);
+      const extra = await save(tx, owner, "sessions", startSession(plan, plan.date!), null);
+      await expect(deleteWorkout(tx, owner, current)).rejects.toThrow("changed");
+      const removed = await deleteWorkout(tx, owner, await deletionPreview(tx, owner.ownerId, "workouts", plan.id));
+      expect(new Set(removed.sessionIds)).toEqual(new Set([session.id, extra.id]));
+      expect(await list(tx, owner.ownerId, "sessions")).toEqual([]);
+      expect(await tx.select().from(results).where(eq(results.sessionId, session.id))).toEqual([]);
+      expect((await list(tx, owner.ownerId, "workouts")).find(w => w.id === untouched.id)).toEqual(untouched);
+      await expect(save(tx, owner, "workouts", { ...plan, revision: 0 }, null)).rejects.toThrow("deleted");
+      await expect(save(tx, owner, "sessions", { ...session, revision: 0 }, null)).rejects.toThrow("deleted");
+      await expect(save(tx, owner, "sessions", { ...session, id: randomUUID(), revision: 0 }, null)).rejects.toThrow("deleted");
+      const backup = await exportOwner(tx, owner.ownerId);
+      expect(backup.workouts.some(w => w.id === plan.id)).toBe(false);
+      expect(computeLedger(backup.weeks[0], backup.workouts, backup.sessions).completedTotal).toBe(0);
+      const standalone = await save(tx, owner, "sessions", { ...session, id: randomUUID(), revision: 0, workoutId: null }, null);
+      await deleteWorkout(tx, owner, await deletionPreview(tx, owner.ownerId, "sessions", standalone.id));
+      expect(await list(tx, owner.ownerId, "sessions")).toEqual([]);
+    });
+  });
   it("imports the public starter profile additively with its exact ledger", async () => {
     await testTransaction(async tx => {
       const owner = actor();
@@ -53,6 +87,25 @@ describe.skipIf(!enabled)("repository with real PostgreSQL, all changes rolled b
       await importOwner(tx, second, backup);
       expect((await getTimerSettings(tx, second.ownerId)).presets).toEqual([45, 120]);
       await expect(saveTimerSettings(tx, first, { ...saved, presets: [45, 45] }, 1)).rejects.toThrow("distinct");
+    });
+  });
+  it("persists an active clock end independently of completion and roundtrips it in backups", async () => {
+    await testTransaction(async tx => {
+      const owner = actor();
+      await importOwner(tx, owner, buildHybridExample());
+      const plan = (await list(tx, owner.ownerId, "workouts")).find(w => w.kind === "planned")!;
+      const value = startSession(plan, plan.date!);
+      value.loggingMode = "checked";
+      value.startedAt = "2026-10-23T20:50:00.000Z";
+      value.finishedAt = "2026-10-23T22:16:00.000Z";
+      const saved = await save(tx, owner, "sessions", value, null);
+      expect(saved.status).toBe("active");
+      expect(saved.results.every(r => r.status === "unlogged")).toBe(true);
+      const backup = await exportOwner(tx, owner.ownerId);
+      expect(backup.sessions[0].finishedAt).toBe(value.finishedAt);
+      expect(backup.sessions[0].status).toBe("active");
+      expect(backup.sessions[0].results).toEqual(saved.results);
+      await expect(save(tx, owner, "sessions", { ...saved, status: "completed" }, saved.revision)).rejects.toThrow("Log or skip");
     });
   });
   const rollback = new Error("test rollback");
@@ -185,6 +238,16 @@ describe.skipIf(!enabled)("repository with real PostgreSQL, all changes rolled b
       expect(persisted.find(r => r.id === session.results[0].id)?.status).toBe("completed");
       await expect(save(tx, owner, "sessions", { ...session, status: "completed" }, session.revision)).rejects.toThrow("Log or skip");
       await expect(save(tx, owner, "sessions", { ...session, loggingMode: "explicit" }, session.revision)).rejects.toThrow("automatic logging");
+      session = await save(tx, owner, "sessions", { ...session, loggingMode: "checked" }, session.revision);
+      session.results[0].status = "unlogged";
+      session = await save(tx, owner, "sessions", session, session.revision);
+      expect(session.results[0].reps).toBe(8);
+      expect(session.results[0].status).toBe("unlogged");
+      const unchecked = await tx.select().from(results).where(eq(results.sessionId, session.id));
+      expect(unchecked.find(row => row.id === session.results[0].id)?.status).toBe("unlogged");
+      await expect(save(tx, owner, "sessions", { ...session, loggingMode: "automatic" }, session.revision)).rejects.toThrow("checked logging");
+      await expect(save(tx, owner, "sessions", { ...session, results: session.results.map((row, i) => i ? row : { ...row, status: "completed", reps: null }) }, session.revision)).rejects.toThrow("Enter every tracked value");
+      session.results[0].status = "completed";
       session.results[1].status = "skipped";
       expect((await save(tx, owner, "sessions", { ...session, status: "completed" }, session.revision)).status).toBe("completed");
     });

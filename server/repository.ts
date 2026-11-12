@@ -1,14 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import * as models from "../contracts/models";
 import * as schema from "./schema";
 import type { Store } from "./db";
 import type { Actor } from "./security";
 import { demand } from "./errors";
-import { validateBlocks, validateSession } from "./domain";
+import { findPrevious, validateBlocks, validateSession } from "./domain";
 import { equipmentDetails, normalizeSessionResults } from "../contracts/training";
 import { normalizeEquipment, normalizeExercise } from "./training";
+import { projectCreationNotes } from "../lib/movement-notes";
 
 export const resourceNames = ["equipment", "exercises", "weeks", "workouts", "sessions"] as const;
 export type Resource = typeof resourceNames[number];
@@ -20,10 +21,53 @@ export type RecordMap = {
 };
 // All resource tables intentionally share the envelope. Their data is validated by resourceSchemas.
 function table(resource: Resource) { return schema[resource] as typeof schema.equipment; }
-export async function list<R extends Resource>(db: Store, owner: string, resource: R): Promise<RecordMap[R][]> {
+export type ListFilter = { weekId?: string; kind?: "routine" | "planned"; workoutId?: string };
+export async function list<R extends Resource>(db: Store, owner: string, resource: R, filter: ListFilter = {}): Promise<RecordMap[R][]> {
   const t = table(resource);
-  const rows = await db.select().from(t).where(eq(t.ownerId, owner));
+  const rows = await db.select({ data: t.data }).from(t).where(and(eq(t.ownerId, owner),
+    filter.weekId ? sql`${t.data}->>'weekId' = ${filter.weekId}` : undefined,
+    filter.kind ? sql`${t.data}->>'kind' = ${filter.kind}` : undefined,
+    filter.workoutId ? sql`${t.data}->>'workoutId' = ${filter.workoutId}` : undefined));
   return rows.map(r => (resource === "equipment" ? equipmentDetails(r.data) : r.data) as RecordMap[R]);
+}
+
+/** Select only each movement's latest eligible snapshot before transferring it from Postgres. */
+export async function previousBatch(db: Store, owner: string, exercises: models.ExerciseRecord[], routineId: string | null, before: string) {
+  if (!exercises.length) return {};
+  const requested = exercises.map(exercise => ({ exerciseId: exercise.id, identities: [
+    { exerciseId: exercise.id, equipment: exercise.equipment, setup: exercise.setup },
+    ...(exercise.historyAliases ?? []),
+  ] }));
+  const selected = await db.execute(sql`
+    SELECT requested.value->>'exerciseId' AS exercise_id, candidate.data
+    FROM jsonb_array_elements(${JSON.stringify(requested)}::jsonb) AS requested(value)
+    LEFT JOIN LATERAL (
+      SELECT session.data FROM ${schema.sessions} AS session
+      WHERE session.owner_id = ${owner}
+        AND session.data->>'performedOn' < ${before}
+        AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(session.data->'blocks') AS block(value)
+          CROSS JOIN LATERAL jsonb_array_elements(block.value->'items') AS item(value)
+          WHERE EXISTS (
+            SELECT 1 FROM jsonb_array_elements(requested.value->'identities') AS identity(value)
+            WHERE item.value->>'exerciseId' = identity.value->>'exerciseId'
+              AND item.value->>'equipment' = identity.value->>'equipment'
+              AND item.value->>'setup' = identity.value->>'setup'
+          ) AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements(session.data->'results') AS result(value)
+            WHERE result.value->>'itemId' = item.value->>'id'
+              AND result.value->>'status' = 'completed'
+          )
+        )
+      ORDER BY session.data->>'performedOn' DESC, coalesce(session.data->>'startedAt', '') DESC
+      LIMIT 1
+    ) AS candidate ON true`);
+  const records = new Map((selected.rows as { exercise_id: string; data: models.SessionRecord | null }[])
+    .map(row => [row.exercise_id, row.data]));
+  return Object.fromEntries(exercises.map(exercise => {
+    const session = records.get(exercise.id);
+    return [exercise.id, findPrevious(exercise, routineId, before, session ? [session] : [])];
+  }));
 }
 export async function get<R extends Resource>(db: Store, owner: string, resource: R, id: string): Promise<RecordMap[R] | null> {
   const t = table(resource);
@@ -32,6 +76,7 @@ export async function get<R extends Resource>(db: Store, owner: string, resource
 }
 export async function requireRecord<R extends Resource>(db: Store, owner: string, resource: R, id: string) {
   z.uuid().parse(id);
+  await assertNotDeleted(db, owner, resource, id);
   const record = await get(db, owner, resource, id);
   demand(record, 404, "not_found", `${resource} record not found`);
   return record;
@@ -76,13 +121,21 @@ async function validateForeign(db: Store, owner: string, resource: Resource, val
 }
 export async function save<R extends Resource>(db: Store, actor: Actor, resource: R, input: unknown, expectedRevision: number | null): Promise<RecordMap[R]> {
   let value = resourceSchemas[resource].parse(input) as RecordMap[R];
+  if (resource === "workouts" || resource === "sessions") {
+    const record = value as models.WorkoutRecord | models.SessionRecord;
+    value = resourceSchemas[resource].parse({ ...record, blocks: projectCreationNotes(record.blocks) }) as RecordMap[R];
+  }
+  await assertNotDeleted(db, actor.ownerId, resource, value.id);
   if (resource === "equipment") value = normalizeEquipment(value as models.EquipmentRecord) as RecordMap[R];
   if (resource === "exercises") value = normalizeExercise(value as models.ExerciseRecord) as RecordMap[R];
   if (resource === "sessions") value = normalizeSessionResults(value as models.SessionRecord) as RecordMap[R];
   const current = await get(db, actor.ownerId, resource, value.id);
   if (resource === "sessions" && (current as models.SessionRecord | null)?.loggingMode === "automatic") {
-    demand((value as models.SessionRecord).loggingMode === "automatic", 422, "logging_mode",
-      "An automatic session must keep automatic logging");
+    demand(["automatic", "checked"].includes((value as models.SessionRecord).loggingMode ?? ""), 422, "logging_mode",
+      "A session using automatic logging may only switch to checked logging");
+  }
+  if (resource === "sessions" && (current as models.SessionRecord | null)?.loggingMode === "checked") {
+    demand((value as models.SessionRecord).loggingMode === "checked", 422, "logging_mode", "A checked session must keep checked logging");
   }
   if (expectedRevision === null) {
     demand(value.revision === 0, 422, "revision", "New records must have revision 0");
@@ -117,4 +170,39 @@ export async function save<R extends Resource>(db: Store, actor: Actor, resource
   }
   await recordAudit(db, actor, current ? "updated" : "created", resource, next.id, next.revision);
   return next;
+}
+
+export async function assertNotDeleted(db: Store, owner: string, resource: Resource, id: string) {
+  const t = schema.deletedRecords;
+  const rows = await db.select({ id: t.id }).from(t).where(and(eq(t.ownerId, owner), eq(t.resource, resource), eq(t.id, id)));
+  demand(!rows.length, 409, "record_deleted", "This workout was deleted. Its old edits cannot be restored.");
+}
+
+export async function deletionPreview(db: Store, owner: string, resource: "workouts" | "sessions", id: string): Promise<models.DeletionPreview> {
+  const value = await requireRecord(db, owner, resource, id);
+  demand(resource !== "workouts" || (value as models.WorkoutRecord).kind === "planned", 422, "routine_delete", "Only planned workouts can be deleted here");
+  demand(resource !== "sessions" || !(value as models.SessionRecord).workoutId, 422, "linked_session", "Delete the linked workout and its results together");
+  const linked = resource === "sessions" ? [value as models.SessionRecord]
+    : await list(db, owner, "sessions", { workoutId: id });
+  return { resource, id, revision: value.revision, title: value.title,
+    date: resource === "workouts" ? (value as models.WorkoutRecord).date : (value as models.SessionRecord).performedOn,
+    loggedSets: linked.reduce((n, session) => n + session.results.filter(result => result.status === "completed").length, 0),
+    sessions: linked.map(session => ({ id: session.id, revision: session.revision })).sort((a,b) => a.id.localeCompare(b.id)) };
+}
+
+// Called inside the API's owner-locked transaction. Confirmation covers the whole graph.
+export async function deleteWorkout(db: Store, actor: Actor, expected: models.DeletionPreview) {
+  const current = await deletionPreview(db, actor.ownerId, expected.resource, expected.id);
+  demand(JSON.stringify(current) === JSON.stringify(models.DeletionSnapshot.parse(expected)), 409, "deletion_changed", "This workout changed. Review the updated confirmation before deleting.", { current });
+  for (const session of current.sessions) {
+    await db.insert(schema.deletedRecords).values({ ownerId: actor.ownerId, resource: "sessions", id: session.id });
+    await db.delete(schema.sessions).where(and(eq(schema.sessions.ownerId, actor.ownerId), eq(schema.sessions.id, session.id)));
+    await recordAudit(db, actor, "deleted", "sessions", session.id, session.revision);
+  }
+  if (current.resource === "workouts") {
+    await db.insert(schema.deletedRecords).values({ ownerId: actor.ownerId, resource: "workouts", id: current.id });
+    await db.delete(schema.workouts).where(and(eq(schema.workouts.ownerId, actor.ownerId), eq(schema.workouts.id, current.id)));
+    await recordAudit(db, actor, "deleted", "workouts", current.id, current.revision);
+  }
+  return { workoutId: current.resource === "workouts" ? current.id : null, sessionIds: current.sessions.map(session => session.id) };
 }

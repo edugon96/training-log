@@ -14,6 +14,7 @@ import {
   ArrowUp,
   Check,
   ChevronDown,
+  ClipboardList,
   MessageSquare,
   X,
 } from "lucide-react"
@@ -99,7 +100,9 @@ export function Numeric({
   value,
   onChange,
   readOnly = false,
+  placeholder = "—",
 }: {
+  placeholder?: string
   label: string
   value: number | null
   readOnly?: boolean
@@ -113,7 +116,7 @@ export function Numeric({
       min={0}
       step="any"
       inputMode="decimal"
-      placeholder="—"
+      placeholder={placeholder}
       value={value ?? ""}
       onChange={(event) => onChange(numberValue(event.target.value))}
     />
@@ -517,8 +520,10 @@ export function Instructions({ text }: { text: string }) {
   const content = cleanInstructions(text)
   if (!content) return null
   return (
-    <aside className="instructions">
-      <span className="instructions-label">Instructions</span>
+    <aside className="instructions" aria-label="Group instructions">
+      <span className="movement-note-icon" aria-hidden="true">
+        <ClipboardList size={19} />
+      </span>
       <div className="markdown-note">
         <Markdown
           remarkPlugins={[remarkGfm]}
@@ -677,6 +682,7 @@ export function Modal(props: {
   children: ReactNode
   onClose: () => void
   dirty?: boolean
+  editor?: boolean
 }) {
   return <ResponsivePanel {...props} />
 }

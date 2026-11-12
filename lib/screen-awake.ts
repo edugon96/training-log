@@ -19,18 +19,35 @@ type WakeEnvironment = {
   subscribe: (listener: () => void) => () => void
 }
 
-/** One request in flight. OS releases never cause an aggressive retry loop. */
+/** One request in flight, with one recovery attempt per foreground/interaction. */
 export function watchScreenAwake(
   environment: WakeEnvironment,
   onStatus: (status: WakeStatus) => void
 ) {
   let disposed = false
   let pending = false
+  let pendingAgain = false
   let lock: Lock | undefined
+  let recovery: ReturnType<typeof setTimeout> | undefined
+  let recoveryAllowed = true
+  const clearRecovery = () => {
+    clearTimeout(recovery)
+    recovery = undefined
+  }
   const release = () => {
+    clearRecovery()
     const held = lock
     lock = undefined
     if (held && !held.released) void held.release().catch(() => undefined)
+  }
+  const recover = () => {
+    if (disposed || !environment.isVisible() || !recoveryAllowed) return
+    recoveryAllowed = false
+    clearRecovery()
+    recovery = setTimeout(() => {
+      recovery = undefined
+      void acquire()
+    }, 1000)
   }
   const acquire = async () => {
     if (disposed) return
@@ -43,7 +60,11 @@ export function watchScreenAwake(
       onStatus("unavailable")
       return
     }
-    if (pending || (lock && !lock.released)) return
+    if (pending) {
+      pendingAgain = true
+      return
+    }
+    if (lock && !lock.released) return
     pending = true
     onStatus("requesting")
     try {
@@ -54,10 +75,12 @@ export function watchScreenAwake(
       } else {
         lock = acquired
         onStatus(acquired.released ? "released" : "active")
+        if (acquired.released) recover()
         acquired.addEventListener("release", () => {
           if (disposed || lock !== acquired) return
           lock = undefined
           onStatus(environment.isVisible() ? "released" : "hidden")
+          recover()
         })
       }
     } catch {
@@ -65,9 +88,15 @@ export function watchScreenAwake(
         onStatus(environment.isVisible() ? "unavailable" : "hidden")
     } finally {
       pending = false
+      if (pendingAgain) {
+        pendingAgain = false
+        if (!disposed) void acquire()
+      }
     }
   }
   const unsubscribe = environment.subscribe(() => {
+    recoveryAllowed = true
+    clearRecovery()
     void acquire()
   })
   void acquire()

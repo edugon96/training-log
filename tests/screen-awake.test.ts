@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   readDisplayPreference,
   watchScreenAwake,
@@ -52,6 +52,7 @@ const tick = async () => {
   await Promise.resolve()
   await Promise.resolve()
 }
+afterEach(() => vi.useRealTimers())
 describe("visible-app wake lock", () => {
   it("defaults on and reads only supported device preference versions", () => {
     for (const value of [
@@ -79,7 +80,8 @@ describe("visible-app wake lock", () => {
     expect(env.locks[1].release).toHaveBeenCalledTimes(1)
     expect(env.unsubscribe).toHaveBeenCalledOnce()
   })
-  it("does not retry an OS release or rejection until another foreground transition", async () => {
+  it("recovers once from an unexpected release without fighting repeated OS releases", async () => {
+    vi.useFakeTimers()
     const env = environment(),
       stop = env.start()
     await tick()
@@ -87,13 +89,48 @@ describe("visible-app wake lock", () => {
     await tick()
     expect(env.statuses.at(-1)).toBe("released")
     expect(env.request).toHaveBeenCalledTimes(1)
-    env.request.mockRejectedValueOnce(new Error("Power saving"))
-    env.visibility(false)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(env.request).toHaveBeenCalledTimes(2)
+    expect(env.statuses.at(-1)).toBe("active")
+    await env.locks[1].release()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(env.request).toHaveBeenCalledTimes(2)
+    // A foreground or user-interaction event explicitly allows another attempt.
     env.visibility(true)
     await tick()
-    expect(env.statuses.at(-1)).toBe("unavailable")
-    expect(env.request).toHaveBeenCalledTimes(2)
+    expect(env.request).toHaveBeenCalledTimes(3)
     stop()
+  })
+  it("does not retry denials without a foreground or interaction event", async () => {
+    vi.useFakeTimers()
+    const env = environment()
+    env.request.mockRejectedValueOnce(new Error("Power saving"))
+    const stop = env.start()
+    await tick()
+    expect(env.statuses.at(-1)).toBe("unavailable")
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(env.request).toHaveBeenCalledTimes(1)
+    env.visibility(true)
+    await tick()
+    expect(env.request).toHaveBeenCalledTimes(2)
+    expect(env.statuses.at(-1)).toBe("active")
+    stop()
+  })
+  it("cancels scheduled recovery while hidden and on cleanup", async () => {
+    vi.useFakeTimers()
+    const env = environment(),
+      stop = env.start()
+    await tick()
+    await env.locks[0].release()
+    env.visibility(false)
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(env.request).toHaveBeenCalledTimes(1)
+    env.visibility(true)
+    await tick()
+    await env.locks[1].release()
+    stop()
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(env.request).toHaveBeenCalledTimes(2)
   })
   it("deduplicates pending requests and releases a late acquisition after disable", async () => {
     const env = environment()

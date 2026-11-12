@@ -78,12 +78,41 @@ test.afterAll(async () => {
       "import_sources",
       "training_defaults",
       "timer_settings",
+      "deleted_records",
     ]) {
       await getPool().query(`DELETE FROM "${table}" WHERE owner_id = $1`, [id])
     }
     await getPool().query('DELETE FROM "apikey" WHERE "referenceId" = $1', [id])
     await getPool().query('DELETE FROM "user" WHERE id = $1', [id])
   }
+})
+test("workout deletion requires both write scopes, checks the complete graph and supports safe retries", async () => {
+  const raw = { id: randomUUID(), revision: 0, kind: "planned", weekId: null, routineId: null, date: "2026-10-21", title: "Delete test", focus: "", notes: "", source: null, blocks: [] }
+  const createKey = randomUUID()
+  const created = await owner.post("/api/v1/workouts", { headers: { "Idempotency-Key": createKey }, data: { value: raw } })
+  expect(created.status()).toBe(201)
+  const path = `/workouts/${raw.id}`
+  const preview = await (await owner.get(`/api/v1${path}/deletion`)).json()
+  expect((await other.get(`/api/v1${path}/deletion`)).status()).toBe(404)
+  for (const scopes of [["plans:write"], ["results:write"], ["read"]]) {
+    const limited = await key(scopes)
+    expect((await write(limited.ctx, "delete", path, { expected: preview })).status()).toBe(403)
+  }
+  const full = await key(["plans:write", "results:write"])
+  const removeKey = randomUUID()
+  const remove = () => full.ctx.delete(`/api/v1${path}`, { headers: { "Idempotency-Key": removeKey }, data: { expected: preview } })
+  const first = await remove()
+  expect(first.status()).toBe(200)
+  expect(await (await remove()).json()).toEqual(await first.json())
+  const resurrect = await owner.post("/api/v1/workouts", { headers: { "Idempotency-Key": createKey }, data: { value: raw } })
+  expect(resurrect.status()).toBe(409)
+  expect((await resurrect.json()).error.code).toBe("record_deleted")
+  expect((await write(owner, "post", "/workouts", { value: raw })).status()).toBe(409)
+  const standalone = { id: randomUUID(), revision: 0, workoutId: null, routineId: null, weekId: null, performedOn: "2026-10-21", title: "Standalone", status: "completed", blocks: [], results: [], notes: "", source: null, startedAt: null, finishedAt: null }
+  expect((await write(owner, "post", "/sessions", { value: standalone })).status()).toBe(201)
+  const snapshot = await (await owner.get(`/api/v1/sessions/${standalone.id}/deletion`)).json()
+  const resultKey = await key(["results:write"])
+  expect((await write(resultKey.ctx, "delete", `/sessions/${standalone.id}`, { expected: snapshot })).status()).toBe(200)
 })
 test("each write scope is independent, agent keys cannot manage credentials", async () => {
   const plan = await key(["plans:write"])

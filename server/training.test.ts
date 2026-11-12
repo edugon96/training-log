@@ -56,6 +56,13 @@ describe("automatic session rules", () => {
     expect(trackingFields({ ...exercise, name: "Weighted pull-up", equipment: "Rig",
       defaultLoad: { value: 25, unit: "lb", basis: "bodyweight" } })).toEqual(["reps", "load"]);
   });
+  it("includes weight for a manually added machine without a default load", () => {
+    const pendulum = { ...exercise, name: "Pendulum Squat (Machine)", equipment: "Atlantis PW212", defaultLoad: null };
+    expect(trackingFields(pendulum, { type: "machine" })).toEqual(["reps", "load"]);
+    expect(trackingFields({ ...pendulum, name: "Leg Extension", equipment: "C105" }, { type: "machine" })).toEqual(["reps", "load"]);
+    expect(trackingFields({ ...pendulum, trackingFields: ["reps"] }, { type: "machine" })).toEqual(["reps"]);
+    expect(trackingFields({ ...exercise, name: "Row (Erg)", equipment: "Concept2 RowErg", defaultLoad: null }, { type: "cardio" })).toEqual(["distanceMeters"]);
+  });
   it("exports personal notes separately from preserved source commentary", () => {
     const draft = session();
     draft.notes = "Original workout commentary";

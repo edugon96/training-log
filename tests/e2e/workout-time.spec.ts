@@ -45,6 +45,17 @@ test("mobile taps pause, resume and reset workout time without changing sets or 
   page,
   context,
 }) => {
+  const openWorkoutClock = async () => {
+    if (
+      !(await page
+        .getByRole("tab", { name: "Workout clock", exact: true })
+        .isVisible())
+    )
+      await page
+        .getByRole("button", { name: "Open workout clock", exact: true })
+        .tap()
+    await page.getByRole("tab", { name: "Workout clock", exact: true }).tap()
+  }
   const errors: string[] = []
   page.on("pageerror", (e) => errors.push(e.message))
   await signInPage(page, identity.email, identity.password)
@@ -108,20 +119,23 @@ test("mobile taps pause, resume and reset workout time without changing sets or 
   await page
     .getByRole("button", { name: "Open Clock workout", exact: true })
     .tap()
-  await page
-    .getByRole("button", { name: "Edit workout time", exact: true })
-    .tap()
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Start workout timer", exact: true })
     .tap()
   await page.getByRole("button", { name: "Close", exact: true }).tap()
   const duration = page
-    .locator(".session-footer")
+    .locator(".workout-summary")
     .getByLabel("Workout duration", { exact: true })
   await page
     .getByLabel("Clock Push-up set 1 actual reps", { exact: true })
     .fill("8")
-  await page.getByRole("button", { name: "Open rest timer", exact: true }).tap()
+  await page
+    .getByRole("button", { name: "Clock Push-up set 1 complete", exact: true })
+    .tap()
+  await page
+    .getByRole("button", { name: "Open workout clock", exact: true })
+    .tap()
   await page.getByRole("button", { name: "1:00", exact: true }).tap()
   await page.waitForTimeout(1200)
   const readRest = () =>
@@ -140,17 +154,20 @@ test("mobile taps pause, resume and reset workout time without changing sets or 
   await page.getByRole("button", { name: "1:00", exact: true }).tap()
   await page.getByRole("button", { name: "Close", exact: true }).tap()
   await context.setOffline(true)
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Pause workout timer", exact: true })
     .tap()
   await expect(
     page.getByRole("button", { name: "Resume workout timer", exact: true })
   ).toBeVisible()
+  await page.getByRole("button", { name: "Close", exact: true }).tap()
   await expect(
-    page.getByRole("status").filter({ hasText: /Offline.*sync pending/ })
+    page.getByRole("status", { name: "Autosave: Offline" }).first()
   ).toBeVisible()
   const paused = await duration.textContent()
   await page.reload()
+  await openWorkoutClock()
   await expect(
     page.getByRole("button", { name: "Resume workout timer", exact: true })
   ).toBeVisible()
@@ -169,7 +186,7 @@ test("mobile taps pause, resume and reset workout time without changing sets or 
     )
     .toBeGreaterThan(1000)
   const beforeReset = await readRest()
-  await page.getByRole("button", { name: "Edit workout time" }).tap()
+  await openWorkoutClock()
   await page.screenshot({ path: "test-results/workout-time-mobile.png" })
   await page.getByRole("button", { name: "Reset workout timer" }).tap()
   await expect(
@@ -194,10 +211,10 @@ test("mobile taps pause, resume and reset workout time without changing sets or 
     )
     .toBe(0)
   await page.reload()
-  await expect(page.locator(".session-footer .elapsed-time")).toHaveText("0:00")
-  await page
-    .getByRole("button", { name: "Edit workout time", exact: true })
-    .tap()
+  await expect(page.locator(".workout-summary .elapsed-time")).toHaveText(
+    "0:00"
+  )
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Start workout timer", exact: true })
     .tap()
@@ -208,15 +225,17 @@ test("mobile taps pause, resume and reset workout time without changing sets or 
       () => document.documentElement.scrollWidth <= innerWidth
     )
   ).toBe(true)
-  await page.locator(".session-footer").scrollIntoViewIfNeeded()
+  await page.locator(".workout-summary").scrollIntoViewIfNeeded()
   await page.screenshot({ path: "test-results/workout-clock-toolbar-320.png" })
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Pause workout timer", exact: true })
     .tap()
   const finishTime = await duration.textContent()
   await page.waitForTimeout(1200)
+  await page.getByRole("button", { name: "Close", exact: true }).tap()
   await page.getByRole("button", { name: "Finish workout", exact: true }).tap()
-  await expect(page.locator(".session-footer")).toContainText("Completed")
+  await expect(page.locator(".workout-toolbar")).toContainText("Completed")
   await expect(duration).toHaveText(finishTime!)
   await expect
     .poll(

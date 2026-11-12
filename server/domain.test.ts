@@ -69,6 +69,17 @@ describe("session snapshots and ledger", () => {
     expect(() => validateSession({ ...session, pausedDurationMs: 61_000 })).toThrow("Paused time cannot exceed");
     expect(() => validateSession({ ...session, startedAt: null, timerPausedAt: null })).toThrow("Paused time requires");
   });
+  it("allows a stopped clock with unfinished sets, but completing the workout still requires resolving them", () => {
+    const session = startSession(plan(), "2026-10-19");
+    session.startedAt = "2026-10-19T12:00:00.000Z";
+    session.finishedAt = "2026-10-19T13:00:00.000Z";
+    for (const loggingMode of ["checked", "automatic"] as const) {
+      expect(() => validateSession({ ...session, loggingMode })).not.toThrow();
+      expect(() => validateSession({ ...session, loggingMode, status: "completed" })).toThrow("Log or skip");
+    }
+    expect(() => validateSession({ ...session, finishedAt: "2026-10-19T11:59:00.000Z" })).toThrow("Finish must follow");
+    expect(() => validateSession({ ...session, timerPausedAt: session.finishedAt })).toThrow("Only a started");
+  });
 });
 describe("history match", () => {
   it("matches verified legacy identities without rewriting snapshots or credit", () => {
@@ -97,13 +108,30 @@ describe("history match", () => {
     old.blocks[0].items[0].exerciseId = randomUUID();
     expect(findPrevious(current, null, "2026-10-19", [old])).toBeNull();
   });
-  it("prefers the same routine over a more recent other routine", () => {
+  it("uses the latest comparable session even when an older session shares the routine", () => {
     const old = startSession(plan(), "2026-10-12");
     const recent = startSession(plan(), "2026-10-16");
     old.routineId = randomUUID();
     old.results[0].status = recent.results[0].status = "completed";
-    expect(findPrevious(exercise, old.routineId, "2026-10-19", [recent, old])?.sessionId).toBe(old.id);
+    expect(findPrevious(exercise, old.routineId, "2026-10-19", [recent, old])?.sessionId).toBe(recent.id);
+    expect(findPrevious(exercise, old.routineId, "2026-10-19", [recent, old])?.match).toBe("exercise");
     expect(findPrevious(exercise, null, "2026-10-19", [old, recent])?.sessionId).toBe(recent.id);
+  });
+  it("returns completed sets in target order with their kinds, preserving source results", () => {
+    const session = startSession(plan(), "2026-10-22");
+    const item = session.blocks[0].items[0];
+    item.sets[0].kind = "warmup";
+    session.results.slice(0, 3).forEach((row, index) => {
+      row.status = "completed";
+      row.reps = 10 + index;
+      row.load = { value: index ? 70 : 40, unit: "lb", basis: "added" };
+    });
+    session.results.reverse();
+    const source = structuredClone(session);
+    const history = findPrevious(exercise, null, "2026-10-24", [session]);
+    expect(history?.results.map(row => row.reps)).toEqual([10, 11, 12]);
+    expect(history?.targets.find(target => target.id === item.sets[0].id)?.kind).toBe("warmup");
+    expect(session).toEqual(source);
   });
   it("does not mix setup or equipment or future dates", () => {
     const session = startSession(plan(), "2026-10-19");

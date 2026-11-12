@@ -48,8 +48,17 @@ export function DisplayProvider({
         isVisible: () => document.visibilityState === "visible",
         subscribe: (listener) => {
           document.addEventListener("visibilitychange", listener)
-          return () =>
+          window.addEventListener("focus", listener)
+          window.addEventListener("pageshow", listener)
+          document.addEventListener("pointerdown", listener, { passive: true })
+          document.addEventListener("keydown", listener)
+          return () => {
             document.removeEventListener("visibilitychange", listener)
+            window.removeEventListener("focus", listener)
+            window.removeEventListener("pageshow", listener)
+            document.removeEventListener("pointerdown", listener)
+            document.removeEventListener("keydown", listener)
+          }
         },
       },
       setStatus
@@ -90,8 +99,7 @@ export function DisplaySettings() {
   const messages: Record<WakeStatus, string> = {
     requesting: "Requesting screen wake…",
     active: "Active while the app is visible.",
-    released:
-      "Your device released screen wake. We’ll try again when you return to the app.",
+    released: "Your device released screen wake. Tap the app to try again.",
     unavailable:
       "Screen wake is unavailable. Your device may still dim or lock.",
     hidden: "Screen wake resumes when you return to the app.",

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
   changeWorkoutTimer,
+  editWorkoutTime,
+  finishWorkoutTime,
+  workoutTimerRunning,
   settleWorkoutPause,
   clockLabel,
   elapsedMilliseconds,
@@ -72,6 +75,84 @@ describe("deadline-based rest timers", () => {
 })
 describe("workout duration", () => {
   const startedAt = "2026-10-20T12:00:00.000Z"
+  it("stops an active clock at its edited end, resumes without the gap and preserves its end on Finish", () => {
+    const base = Date.parse(startedAt)
+    const active = { startedAt, finishedAt: null, status: "active" as const }
+    const end = new Date(base + 600_000).toISOString()
+    const stopped = editWorkoutTime(
+      active,
+      { startedAt, finishedAt: end },
+      base + 3_600_000
+    )
+    expect(stopped.status).toBe("active")
+    expect(elapsedMilliseconds(stopped, base + 9_000_000)).toBe(600_000)
+    expect(workoutTimerRunning(stopped)).toBe(false)
+    expect(changeWorkoutTimer(stopped, "pause", base + 3_600_000)).toBe(stopped)
+    const resumed = changeWorkoutTimer(stopped, "resume", base + 3_600_000)
+    expect(resumed.finishedAt).toBeNull()
+    expect(resumed.pausedDurationMs).toBe(3_000_000)
+    expect(workoutTimerRunning(resumed)).toBe(true)
+    expect(elapsedMilliseconds(resumed, base + 3_610_000)).toBe(610_000)
+    expect(
+      editWorkoutTime(
+        stopped,
+        { startedAt, finishedAt: null },
+        base + 3_600_000
+      )
+    ).toEqual(resumed)
+    expect(finishWorkoutTime(stopped, base + 9_000_000)).toMatchObject({
+      status: "completed",
+      finishedAt: end,
+    })
+    expect(
+      elapsedMilliseconds(
+        finishWorkoutTime(resumed, base + 3_610_000),
+        base + 9_000_000
+      )
+    ).toBe(610_000)
+  })
+  it("corrects completed and historical clocks without reopening workouts or fabricating times", () => {
+    const base = Date.parse(startedAt)
+    const original = {
+      startedAt,
+      finishedAt: new Date(base + 3_600_000).toISOString(),
+      status: "completed" as const,
+      pausedDurationMs: 30_000,
+    }
+    const fixed = editWorkoutTime(
+      original,
+      { startedAt, finishedAt: new Date(base + 600_000).toISOString() },
+      base + 9_000_000
+    )
+    expect(fixed.status).toBe("completed")
+    expect(fixed.pausedDurationMs).toBe(0)
+    expect(elapsedMilliseconds(fixed, base + 9_000_000)).toBe(600_000)
+    expect(editWorkoutTime(original, original, base)).toBe(original)
+    const unknown = editWorkoutTime(
+      original,
+      { startedAt: null, finishedAt: null },
+      base
+    )
+    expect(elapsedMilliseconds(unknown, base)).toBeNull()
+    expect(unknown.status).toBe("completed")
+    expect(() =>
+      editWorkoutTime(original, { startedAt, finishedAt: "not a time" }, base)
+    ).toThrow("valid date")
+    expect(() =>
+      editWorkoutTime(
+        original,
+        { startedAt, finishedAt: new Date(base - 1).toISOString() },
+        base
+      )
+    ).toThrow("End time must follow")
+    expect(
+      editWorkoutTime(
+        { startedAt: null, finishedAt: original.finishedAt, status: "active" },
+        { startedAt: null, finishedAt: null },
+        base
+      ).finishedAt
+    ).toBeNull()
+  })
   it("includes rests and stops at the recorded finish", () => {
     expect(
       elapsedMilliseconds(

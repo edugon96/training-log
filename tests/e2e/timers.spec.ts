@@ -119,7 +119,10 @@ test("mobile timers persist across navigation, reload and offline use, then canc
     .getByLabel("Timer Push-up set 1 actual reps", { exact: true })
     .fill("8")
   await page
-    .getByRole("button", { name: "Open rest timer", exact: true })
+    .getByRole("button", { name: "Timer Push-up set 1 complete", exact: true })
+    .click()
+  await page
+    .getByRole("button", { name: "Open workout clock", exact: true })
     .click()
   await page.getByRole("button", { name: "1:30", exact: true }).click()
   const responseTimes: number[] = []
@@ -199,13 +202,13 @@ test("mobile timers persist across navigation, reload and offline use, then canc
   await expect(custom).toHaveAttribute("aria-valuenow", "60")
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await expect(
-    page.getByRole("dialog", { name: "Rest timer", exact: true })
+    page.getByRole("dialog", { name: "Clock", exact: true })
   ).toBeVisible()
   expect((await readTimer()).id).toBe(beforeDraft.id)
   expect((await readTimer()).deadline).toBe(beforeDraft.deadline)
   await page.getByRole("button", { name: "Close", exact: true }).click()
   await page
-    .getByRole("button", { name: "Open rest timer", exact: true })
+    .getByRole("button", { name: "Open workout clock", exact: true })
     .click()
   await expect(custom).toHaveCount(0)
   await page.getByRole("button", { name: "1:30", exact: true }).click()
@@ -251,6 +254,7 @@ test("mobile timers persist across navigation, reload and offline use, then canc
   expect((await readTimer()).durationMs).toBe(beforeExtension.durationMs)
   const paused = await page.locator(".rest-countdown").innerText()
   await page.getByRole("button", { name: "Close", exact: true }).click()
+  await page.getByRole("button", { name: "Back", exact: true }).click()
   await page
     .getByRole("navigation", { name: "Mobile navigation" })
     .getByRole("button", { name: "Profile", exact: true })
@@ -326,7 +330,7 @@ test("mobile timers persist across navigation, reload and offline use, then canc
     .getByRole("button", { name: "Open Timer workout", exact: true })
     .click()
   await page
-    .getByRole("button", { name: "Open rest timer", exact: true })
+    .getByRole("button", { name: "Open workout clock", exact: true })
     .click()
   await page.getByRole("button", { name: "1:00", exact: true }).click()
   await page.getByRole("button", { name: "Close", exact: true }).click()
@@ -336,17 +340,17 @@ test("mobile timers persist across navigation, reload and offline use, then canc
       () => document.documentElement.scrollWidth <= innerWidth
     )
   ).toBe(true)
-  await page.locator(".session-footer").scrollIntoViewIfNeeded()
+  await page.locator(".workout-toolbar").scrollIntoViewIfNeeded()
   await page.screenshot({ path: "test-results/timer-mobile-toolbar.png" })
   await page
     .getByRole("button", { name: "Finish workout", exact: true })
     .click()
-  await expect(page.locator(".session-footer")).toContainText("Completed")
+  await expect(page.locator(".workout-toolbar")).toContainText("Completed")
   await expect(
     page.getByRole("button", { name: "Open running rest timer" })
   ).toHaveCount(0)
   const duration = await page
-    .getByLabel("Workout duration", { exact: true })
+    .getByLabel(/^Workout duration(?: not tracked)?$/)
     .textContent()
   await expect
     .poll(
@@ -354,22 +358,14 @@ test("mobile timers persist across navigation, reload and offline use, then canc
         (await (await context.request.get("/api/v1/sessions")).json())[0].status
     )
     .toBe("completed")
-  await page
-    .getByRole("button", { name: "Workout actions", exact: true })
-    .click()
-  await page
-    .getByRole("menuitem", { name: "Edit results", exact: true })
-    .click()
-  await page.getByRole("button", { name: "Edit workout time" }).click()
-  await page.getByRole("button", { name: "Workout clock actions" }).click()
-  await page
-    .getByRole("menuitem", { name: "Edit timestamps", exact: true })
-    .click()
-  await page.getByLabel("Workout started").fill("2026-10-20T12:00")
-  await page.getByLabel("Workout started").blur()
-  await page.getByLabel("Workout finished").fill("2026-10-20T13:30")
-  await page.getByLabel("Workout finished").blur()
-  await page.getByRole("button", { name: "Close", exact: true }).click()
+  await page.getByRole("button", { name: "Open workout clock" }).click()
+  await expect(
+    page.getByRole("tab", { name: "Workout clock", exact: true })
+  ).toHaveAttribute("aria-selected", "true")
+  await page.getByLabel("Workout start time").fill("2026-10-20T12:00")
+  await page.getByLabel("Workout start time").blur()
+  await page.getByLabel("Workout end time").fill("2026-10-20T13:30")
+  await page.getByLabel("Workout end time").blur()
   await page.getByRole("button", { name: "Close", exact: true }).click()
   await expect(page.getByLabel("Workout duration", { exact: true })).toHaveText(
     "1:30:00"

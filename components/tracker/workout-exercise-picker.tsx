@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search, X } from "lucide-react"
+import { Check, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -55,13 +55,13 @@ export function TrackingFieldsPicker({
 export function WorkoutExercisePicker({
   exercises,
   onSelect,
-  label,
+  single = false,
 }: {
   exercises: ExerciseRecord[]
-  onSelect: (exercise: ExerciseRecord) => void
-  label: string
+  onSelect: (exercises: ExerciseRecord[]) => void
+  single?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<ExerciseRecord[]>([])
   const [query, setQuery] = useState("")
   const [muscle, setMuscle] = useState("")
   const [equipment, setEquipment] = useState("")
@@ -79,35 +79,12 @@ export function WorkoutExercisePicker({
         .toLowerCase()
         .includes(query.trim().toLowerCase())
   )
-  if (!open)
-    return (
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Plus size={14} />
-        {label}
-      </Button>
-    )
   return (
-    <div className="workout-exercise-picker rounded-lg border border-border bg-background p-3">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-medium">Choose a movement</h3>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Close movement picker"
-          onClick={() => setOpen(false)}
-        >
-          <X size={15} />
-        </Button>
-      </div>
-      <div className="relative">
-        <Search
-          size={15}
-          className="absolute top-2.5 left-3 text-muted-foreground"
-        />
+    <div className="workout-exercise-picker">
+      <div className="movement-search">
+        <Search size={18} aria-hidden="true" />
         <Input
-          autoFocus
           aria-label="Search movements"
-          className="pl-9"
           placeholder="Search movement or machine…"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -139,16 +116,21 @@ export function WorkoutExercisePicker({
           ))}
         </NativeSelect>
       </div>
-      <div className="max-h-64 overflow-y-auto" aria-label="Matching movements">
+      <div className="movement-picker-results" aria-label="Matching movements">
         {filtered.map((exercise) => (
           <button
             type="button"
             key={exercise.id}
-            className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+            aria-pressed={selected.some((value) => value.id === exercise.id)}
+            className="movement-choice"
             onClick={() => {
-              onSelect(exercise)
-              setOpen(false)
-              setQuery("")
+              setSelected((current) =>
+                current.some((value) => value.id === exercise.id)
+                  ? current.filter((value) => value.id !== exercise.id)
+                  : single
+                    ? [exercise]
+                    : [...current, exercise]
+              )
             }}
           >
             <span>
@@ -166,7 +148,11 @@ export function WorkoutExercisePicker({
                   .join(" · ")}
               </span>
             </span>
-            <Plus size={15} className="shrink-0 text-muted-foreground" />
+            {selected.some((value) => value.id === exercise.id) ? (
+              <Check size={18} className="text-primary" />
+            ) : (
+              <Plus size={18} className="text-muted-foreground" />
+            )}
           </button>
         ))}
         {!filtered.length && (
@@ -174,6 +160,13 @@ export function WorkoutExercisePicker({
             No matching movements. Try another filter.
           </p>
         )}
+      </div>
+      <div className="picker-footer">
+        <Button disabled={!selected.length} onClick={() => onSelect(selected)}>
+          {single
+            ? "Replace exercise"
+            : `Add ${selected.length || ""} ${selected.length === 1 ? "exercise" : "exercises"}`}
+        </Button>
       </div>
     </div>
   )

@@ -236,12 +236,12 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   await expect(
     page.getByRole("heading", { name: "Strength", exact: true })
   ).toHaveCount(1)
-  const preparation = page.locator(".workout-block").filter({
+  const preparation = page.locator(".workout-group").filter({
     has: page.getByRole("heading", { name: "Preparation", exact: true }),
   })
   const instructionInsets = await preparation.evaluate((block) => {
     const instructions = block.querySelector(".instructions")!
-    const heading = block.querySelector(".block-heading")!
+    const heading = block.querySelector(".workout-group-heading")!
     const outer = block.getBoundingClientRect()
     const inner = instructions.getBoundingClientRect()
     return {
@@ -251,8 +251,10 @@ test("refined logger, completion review, safe instructions, equipment and saved 
       left: inner.left - outer.left,
     }
   })
-  for (const inset of Object.values(instructionInsets))
-    expect(inset).toBeGreaterThanOrEqual(16)
+  expect(instructionInsets.left).toBe(0)
+  expect(instructionInsets.right).toBe(0)
+  expect(instructionInsets.top).toBeGreaterThanOrEqual(12)
+  expect(instructionInsets.bottom).toBeGreaterThanOrEqual(0)
   await expect(page.locator(".instructions strong")).toHaveText("Purpose:")
   await expect(page.locator(".instructions li")).toHaveText("Keep reps crisp.")
   await expect(
@@ -292,6 +294,9 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   await page
     .getByLabel("QA Bench set 1 actual weight", { exact: true })
     .fill("135")
+  await page
+    .getByRole("button", { name: "QA Bench set 1 complete", exact: true })
+    .click()
   await expect(firstBench).toHaveAttribute("data-completion", "completed")
   await page
     .getByRole("button", { name: "Collapse Strength", exact: true })
@@ -311,6 +316,9 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   await page
     .getByLabel("QA Pull-up set 1 actual reps", { exact: true })
     .fill("6")
+  await page
+    .getByRole("button", { name: "QA Pull-up set 1 complete", exact: true })
+    .click()
   await expect(page.locator(`#set-${pullItem.sets[0].id}`)).toHaveAttribute(
     "data-completion",
     "completed"
@@ -318,6 +326,9 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   await page
     .getByLabel("QA Hold set 1 actual seconds", { exact: true })
     .fill("30")
+  await page
+    .getByRole("button", { name: "QA Hold set 1 complete", exact: true })
+    .click()
   await page
     .getByLabel("QA Carry set 1 actual meters", { exact: true })
     .fill("20")
@@ -338,9 +349,9 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   await expect(
     page.getByLabel("QA Bench set 3 actual weight", { exact: true })
   ).toHaveValue("")
-  await expect(benchMovement.locator(".movement-target")).toContainText(
-    "8–10 reps"
-  )
+  await expect(
+    benchMovement.locator(".movement-reference-summary")
+  ).toContainText("8–10 reps")
   const weightBox = await page
     .getByLabel("QA Bench set 1 actual weight", { exact: true })
     .boundingBox()
@@ -365,10 +376,7 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   expect(narrowWeight!.y).toBe(narrowReps!.y)
   expect(narrowWeight!.width).toBeGreaterThanOrEqual(40)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page
-    .getByRole("button", { name: "QA Bench actions", exact: true })
-    .click()
-  await page.getByRole("menuitem", { name: "Units", exact: true }).click()
+  await page.getByRole("button", { name: "QA Bench weight units", exact: true }).click()
   await expect(
     page.getByRole("combobox", {
       name: "QA Bench new entries unit",
@@ -388,15 +396,18 @@ test("refined logger, completion review, safe instructions, equipment and saved 
 
   const secondBench = page.locator(`#set-${benchItem.sets[1].id}`)
   await page
-    .getByRole("button", { name: "QA Bench set 2 actions", exact: true })
+    .getByRole("button", { name: "QA Bench actions", exact: true })
     .click()
-  await page.getByRole("menuitem", { name: "Skip set", exact: true }).click()
-  await expect(secondBench).toHaveAttribute("data-completion", "skipped")
+  await page.getByRole("menuitem", { name: "Set details", exact: true }).click()
   await page
-    .getByRole("button", { name: "QA Bench set 2 actions", exact: true })
+    .getByRole("combobox", { name: "QA Bench set details", exact: true })
     .click()
-  await page.getByRole("menuitem", { name: "Undo skip", exact: true }).click()
+  await page.getByRole("option", { name: "Set 2", exact: true }).click()
+  await page.getByRole("button", { name: "Skip set", exact: true }).click()
+  await expect(secondBench).toHaveAttribute("data-completion", "skipped")
+  await page.getByRole("button", { name: "Undo skip", exact: true }).click()
   await expect(secondBench).toHaveAttribute("data-completion", "unlogged")
+  await page.getByRole("button", { name: "Done", exact: true }).click()
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
@@ -443,7 +454,7 @@ test("refined logger, completion review, safe instructions, equipment and saved 
   await page
     .getByRole("button", { name: "Skip remaining and finish", exact: true })
     .click()
-  await expect(page.locator(".session-footer .completed-label")).toBeVisible()
+  await expect(page.locator(".workout-toolbar .completed-label")).toBeVisible()
   let saved: SessionRecord | undefined
   await expect
     .poll(async () => {
@@ -454,7 +465,7 @@ test("refined logger, completion review, safe instructions, equipment and saved 
       return saved?.status
     })
     .toBe("completed")
-  expect(saved?.loggingMode).toBe("automatic")
+  expect(saved?.loggingMode).toBe("checked")
   const savedCarry = saved?.results.find(
     (result) => result.targetId === carryItem.sets[0].id
   )
@@ -470,6 +481,7 @@ test("refined logger, completion review, safe instructions, equipment and saved 
     saved?.results.filter((result) => result.status === "skipped")
   ).toHaveLength(3)
 
+  await page.getByRole("button", { name: "Back", exact: true }).click()
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page
     .getByRole("navigation", { name: "Main navigation" })

@@ -15,6 +15,32 @@ test.use({
   viewport: { width: 390, height: 844 },
   hasTouch: true,
   isMobile: true,
+  // This spec gates real API responses to inspect loading states.
+  serviceWorkers: "block",
+})
+test.afterEach(async ({ page }, info) => {
+  if (info.status !== info.expectedStatus) {
+    await info.attach("panel-layout", {
+      contentType: "application/json",
+      body: JSON.stringify(
+        await page
+          .locator(".mobile-panel, .mobile-panel-overlay")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => ({
+              className: node.className,
+              text: node.textContent?.slice(0, 60),
+              rect: node.getBoundingClientRect().toJSON(),
+              style: (node as HTMLElement).style.cssText,
+              pointer: getComputedStyle(node).pointerEvents,
+              z: getComputedStyle(node).zIndex,
+              transform: getComputedStyle(node).transform,
+            }))
+          ),
+        null,
+        2
+      ),
+    })
+  }
 })
 const origin = process.env.BETTER_AUTH_URL || "http://localhost:3000"
 let identity: { id: string; email: string; password: string }
@@ -49,6 +75,17 @@ test("one workout screen, manual timing, mobile units, protected completed edits
   page,
   context,
 }) => {
+  const openWorkoutClock = async () => {
+    if (
+      !(await page
+        .getByRole("tab", { name: "Workout clock", exact: true })
+        .isVisible())
+    )
+      await page
+        .getByRole("button", { name: "Open workout clock", exact: true })
+        .tap()
+    await page.getByRole("tab", { name: "Workout clock", exact: true }).tap()
+  }
   const errors: string[] = []
   page.on("pageerror", (error) => errors.push(error.message))
   await signInPage(page, identity.email, identity.password)
@@ -151,7 +188,21 @@ test("one workout screen, manual timing, mobile units, protected completed edits
     await expect(skeleton).toHaveCount(0)
     await page.unroute("**/api/v1/me")
   }
+  // Finish the initial reads before testing reload. WebKit reports requests
+  // aborted by an immediate document replacement as access-control errors.
+  const initialReads = Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().includes(`/api/v1/ledger?weekId=${week.id}`) &&
+        response.ok()
+    ),
+    page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/timer-settings") && response.ok()
+    ),
+  ])
   await page.goto(`/?tab=week&week=${week.id}`)
+  await initialReads
   await page.reload()
   await expect(page.getByText("Connected", { exact: true })).toHaveCount(0)
   await expect(
@@ -172,18 +223,22 @@ test("one workout screen, manual timing, mobile units, protected completed edits
   ).toHaveCount(0)
   expect(await sessions()).toHaveLength(0)
   await page.reload()
-  await expect(page.locator(".session-footer .elapsed-time")).toHaveText("0:00")
+  await expect(page.locator(".workout-summary .elapsed-time")).toHaveText(
+    "0:00"
+  )
   expect(await sessions()).toHaveLength(0)
   await page.getByRole("button", { name: "Workout actions", exact: true }).tap()
   await page
     .getByRole("menuitem", { name: "Edit movements", exact: true })
     .tap()
-  await page.getByLabel("Workout", { exact: true }).fill("Changed draft")
-  await page.getByRole("button", { name: "Close", exact: true }).tap()
-  await expect(
-    page.getByRole("heading", { name: "Discard changes?" })
-  ).toBeVisible()
-  await page.getByRole("button", { name: "Discard changes", exact: true }).tap()
+  await page
+    .getByLabel("Workout", { exact: true })
+    .fill("Athletic conditioning")
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Back", exact: true })
+    .tap()
+  await expect(page.getByRole("dialog")).toHaveCount(0)
   expect(await sessions()).toHaveLength(0)
   await page
     .getByLabel("Test Bench set 1 actual weight", { exact: true })
@@ -191,6 +246,9 @@ test("one workout screen, manual timing, mobile units, protected completed edits
   await page
     .getByLabel("Test Bench set 1 actual reps", { exact: true })
     .fill("9")
+  await page
+    .getByRole("button", { name: "Test Bench set 1 complete", exact: true })
+    .tap()
   await expect.poll(async () => (await sessions())[0]?.results[0]?.reps).toBe(9)
   expect((await sessions())[0].startedAt).toBeNull()
   await expect(page.getByLabel("Session notes", { exact: true })).toHaveCount(0)
@@ -206,27 +264,14 @@ test("one workout screen, manual timing, mobile units, protected completed edits
       return saved?.userNotes ?? saved?.notes
     })
     .toBe("Good session, notes saved automatically")
-  const clockCenter = await page
-    .locator(".session-time-button .elapsed-time")
-    .boundingBox()
-  const restCenter = await page
-    .getByRole("button", { name: "Open rest timer", exact: true })
-    .boundingBox()
-  expect(
-    clockCenter &&
-      restCenter &&
-      Math.abs(
-        clockCenter.y +
-          clockCenter.height / 2 -
-          restCenter.y -
-          restCenter.height / 2
-      )
-  ).toBeLessThan(2)
+  await expect(page.locator(".workout-toolbar")).toHaveCSS("position", "sticky")
+  await expect(
+    page.getByRole("button", { name: "Open workout clock", exact: true })
+  ).toBeVisible()
   await page.screenshot({ path: "test-results/workout-toolbar-mobile.png" })
   await page
-    .getByRole("button", { name: "Test Bench actions", exact: true })
+    .getByRole("button", { name: "Test Bench weight units", exact: true })
     .tap()
-  await page.getByRole("menuitem", { name: "Units", exact: true }).tap()
   await page
     .getByRole("combobox", { name: "Test Bench new entries unit", exact: true })
     .tap()
@@ -238,43 +283,43 @@ test("one workout screen, manual timing, mobile units, protected completed edits
   await page
     .getByLabel("Test Bench set 2 actual reps", { exact: true })
     .fill("10")
+  await page
+    .getByRole("button", { name: "Test Bench set 2 complete", exact: true })
+    .tap()
   await expect.poll(async () => (await sessions())[0]?.results.length).toBe(2)
   await expect
     .poll(async () => (await sessions())[0]?.results[1]?.load?.unit)
     .toBe("kg")
   expect((await sessions())[0].results[0].load?.unit).toBe("lb")
   await page
-    .getByRole("button", { name: "Test Bench set 1 actions", exact: true })
+    .getByRole("button", { name: "Test Bench actions", exact: true })
     .tap()
-  for (const item of await page.getByRole("menuitem").all())
-    await expect(item.locator("svg")).toHaveCount(1)
-  await page.getByRole("menuitem", { name: "Set-specific units" }).tap()
+  await page.getByRole("menuitem", { name: "Set details", exact: true }).tap()
   await expect(
     page.getByRole("combobox", { name: "Test Bench set 1 unit", exact: true })
   ).toContainText("lb")
   await page.getByRole("button", { name: "Close", exact: true }).tap()
-  await page
-    .getByRole("button", { name: "Edit workout time", exact: true })
-    .tap()
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Start workout timer", exact: true })
     .tap()
   await expect.poll(async () => (await sessions())[0]?.startedAt).not.toBeNull()
   await page.getByRole("button", { name: "Close", exact: true }).tap()
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Pause workout timer", exact: true })
     .tap()
   await expect(
     page.getByRole("button", { name: "Resume workout timer", exact: true })
   ).toBeVisible()
-  await page
-    .getByRole("button", { name: "Edit workout time", exact: true })
-    .tap()
+  await openWorkoutClock()
   await page
     .getByRole("button", { name: "Reset workout timer", exact: true })
     .tap()
   await page.getByRole("button", { name: "Close", exact: true }).tap()
-  await expect(page.locator(".session-footer .elapsed-time")).toHaveText("0:00")
+  await expect(page.locator(".workout-summary .elapsed-time")).toHaveText(
+    "0:00"
+  )
   await expect.poll(async () => (await sessions())[0]?.startedAt).toBeNull()
   await page.getByRole("button", { name: "Finish workout", exact: true }).tap()
   await expect.poll(async () => (await sessions())[0]?.status).toBe("completed")
@@ -316,17 +361,17 @@ test("one workout screen, manual timing, mobile units, protected completed edits
       name: "Results changed elsewhere",
       exact: true,
     })
-  ).toBeVisible()
+  ).toHaveCount(0)
   expect((await sessions())[0].notes).toBe("Changed on another device")
-  await page
-    .getByRole("button", { name: "Review device draft", exact: true })
-    .tap()
   await expect(
     page.getByLabel("Test Bench set 1 actual reps", { exact: true })
   ).toHaveValue("")
   await page
     .getByLabel("Test Bench set 1 actual reps", { exact: true })
     .fill("11")
+  await page
+    .getByRole("button", { name: "Test Bench set 1 complete", exact: true })
+    .tap()
   await expect.poll(async () => (await sessions())[0]?.results[0].reps).toBe(11)
   expect((await sessions())[0].status).toBe("completed")
   expect((await sessions())[0].startedAt).toBeNull()
@@ -344,6 +389,7 @@ test("one workout screen, manual timing, mobile units, protected completed edits
   await expect(
     page.getByRole("heading", { name: "Athletic conditioning", exact: true })
   ).toBeVisible()
+  await page.getByRole("button", { name: "Back", exact: true }).tap()
   await page
     .getByRole("navigation", { name: "Mobile navigation" })
     .getByRole("button", { name: "Profile", exact: true })
@@ -382,17 +428,23 @@ test("one workout screen, manual timing, mobile units, protected completed edits
       )
     ).toBe(true)
   }
-  await page.goto(`/?tab=settings&week=${week.id}`)
-  await expect(
-    page.getByRole("heading", { name: "Profile", exact: true })
-  ).toBeVisible()
-  await page.goto(`/?tab=history&week=${week.id}`)
-  await expect(
-    page.getByRole("button", {
+  // Legacy URLs are independent entry points. Open fresh tabs so the viewport
+  // checks above do not leave framework prefetches cancelled by a document swap.
+  for (const route of [
+    { tab: "settings", role: "heading" as const, name: "Profile" },
+    {
+      tab: "history",
+      role: "button" as const,
       name: "Open Athletic conditioning",
-      exact: true,
-    })
-  ).toBeVisible()
+    },
+  ]) {
+    const entry = await context.newPage()
+    entry.on("pageerror", (error) => errors.push(error.message))
+    await entry.goto(`/?tab=${route.tab}&week=${week.id}`)
+    await expect(
+      entry.getByRole(route.role, { name: route.name, exact: true })
+    ).toBeVisible()
+  }
   expect(
     (await sessions()).filter((session) => session.workoutId === plan.id)
   ).toHaveLength(1)

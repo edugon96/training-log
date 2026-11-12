@@ -1,4 +1,5 @@
 "use client"
+import { newGroup } from "@/lib/workout-groups"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
@@ -12,24 +13,33 @@ import {
   Dumbbell,
   UserRound,
   LogOut,
-  Plus,
   PanelLeftClose,
   PanelLeftOpen,
-  WifiOff,
+  Plus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api, ApiError } from "@/lib/api-client"
+import { savePlanEdit } from "@/lib/workout-edits"
+import { disablePhoneNotifications } from "@/lib/timer-alerts"
+import {
+  publishSaved,
+  subscribeSaved,
+  type SavedEdit,
+} from "@/lib/autosave-events"
 import {
   cacheSession,
   cachePlans,
+  cacheWeekPlans,
+  cacheWorkout,
   readCachedPlans,
   getWorkoutDraft,
-  flushQueue,
+  offlineDb,
   listCachedSessions,
   listPending,
-  subscribePending,
   readCachedSession,
+  withPendingSessions,
+  purgeWorkout,
 } from "@/lib/offline"
 import {
   type CatalogRecord,
@@ -44,6 +54,7 @@ import {
 import { Field, Modal, NativeSelect, errorMessage, today } from "./shared"
 import { WorkoutEditor } from "./workout-editor"
 import { SessionView } from "./session-view"
+import { AutosaveStatus, useAutosaveCoordinator } from "./autosave"
 import { Library } from "./library"
 import { Settings } from "./settings"
 import { ConfirmationProvider, confirmAction } from "./responsive-panel"
@@ -62,6 +73,16 @@ const nav = [
   { id: "library", label: "Library", icon: BookOpen },
   { id: "profile", label: "Profile", icon: UserRound },
 ] as const
+function upsertRecord<T extends { id: string; revision: number }>(
+  values: T[],
+  next: T
+) {
+  const previous = values.find((value) => value.id === next.id)
+  if (previous && previous.revision > next.revision) return values
+  return previous
+    ? values.map((value) => (value.id === next.id ? next : value))
+    : [...values, next]
+}
 function cloneBlocks(workout: WorkoutRecord) {
   return workout.blocks.map((b) => ({
     ...b,
@@ -94,7 +115,6 @@ function TrackerContent() {
   const [openingWorkout, setOpeningWorkout] = useState(false)
   const [tab, setTab] = useState<Tab>("week")
   const [online, setOnline] = useState(true)
-  const [pendingCount, setPendingCount] = useState(0)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [weeks, setWeeks] = useState<WeekRecord[]>([])
@@ -109,6 +129,7 @@ function TrackerContent() {
   const [weekId, setWeekId] = useState("")
   const [ledger, setLedger] = useState<LedgerRecord | null>(null)
   const [ledgerErrorWeekId, setLedgerErrorWeekId] = useState("")
+  const [ledgerVersion, setLedgerVersion] = useState(0)
   const [active, setActive] = useState<SessionRecord | null>(null)
   const [editingWorkout, setEditingWorkout] = useState<WorkoutRecord | null>(
     null
@@ -126,10 +147,25 @@ function TrackerContent() {
   const persistenceRef = useRef<Promise<unknown>>(Promise.resolve())
   const navigationVersion = useRef(0)
   const activeLocation = useRef("")
+  const readVersion = useRef(0)
+  const savedVersion = useRef(0)
+  const acknowledged = useRef(new Map<string, SavedEdit>())
+  const activeRef = useRef(active)
+  const editorRef = useRef(editingWorkout)
+  useEffect(() => {
+    activeRef.current = active
+    editorRef.current = editingWorkout
+  }, [active, editingWorkout])
+  const invalidateLedger = useCallback(
+    () => setLedgerVersion((value) => value + 1),
+    []
+  )
   const week = weeks.find((w) => w.id === weekId)
   const routines = workouts.filter((w) => w.kind === "routine")
 
   const refresh = useCallback(async () => {
+    const ownerId = ownerIdRef.current
+    const baseline = ownerId ? await offlineDb.plans.get(ownerId) : undefined
     const [w, p, s, e, m, defaults, choices] = await Promise.all([
       api.listWeeks(),
       api.listWorkouts(),
@@ -139,10 +175,14 @@ function TrackerContent() {
       api.getTrainingDefaults(),
       api.catalog(),
     ])
-    if (ownerIdRef.current) await cachePlans(ownerIdRef.current, w, p)
+    if (ownerIdRef.current !== ownerId) return
+    if (ownerId) await cachePlans(ownerId, w, p, baseline?.workouts)
     w.sort((a, b) => b.startDate.localeCompare(a.startDate))
     setWeeks(w)
-    setWorkouts(p)
+    const cached = ownerIdRef.current
+      ? await readCachedPlans(ownerIdRef.current)
+      : undefined
+    setWorkouts(cached?.workouts ?? p)
     setSessions(s)
     setExercises(e)
     setEquipment(m)
@@ -154,17 +194,69 @@ function TrackerContent() {
     })
   }, [])
   const refreshSync = useCallback(async () => {
+    if (!owner || !weekId || !navigator.onLine) return
+    const version = ++readVersion.current
+    const saved = savedVersion.current
+    const baseline = await offlineDb.plans.get(owner.id)
+    const [w, p, s] = await Promise.all([
+      api.listWeeks(),
+      api.listWorkouts({ weekId }),
+      api.listSessions({ weekId }),
+    ])
+    const isCurrent = () =>
+      version === readVersion.current &&
+      ownerIdRef.current === owner.id &&
+      saved === savedVersion.current
+    if (!isCurrent()) return
+    await cacheWeekPlans(owner.id, weekId, w, p, isCurrent, baseline?.workouts)
+    const [plans, currentSessions] = await Promise.all([
+      readCachedPlans(owner.id),
+      withPendingSessions(owner.id, s, weekId),
+    ])
+    if (!isCurrent()) return
+    setWeeks(w.sort((a, b) => b.startDate.localeCompare(a.startDate)))
+    if (plans) setWorkouts(plans.workouts)
+    setSessions((values) => [
+      ...values.filter((value) => value.weekId !== weekId),
+      ...currentSessions,
+    ])
+    invalidateLedger()
+  }, [owner, weekId, invalidateLedger])
+
+  useEffect(() => {
     if (!owner) return
-    setPendingCount((await listPending(owner.id)).length)
-    if (navigator.onLine) {
-      const [s, l] = await Promise.all([
-        api.listSessions(),
-        weekId ? api.ledger(weekId) : Promise.resolve(null),
-      ])
-      setSessions(s)
-      setLedger(l)
+    let live = true
+    const unsubscribe = subscribeSaved((event) => {
+      if (event.ownerId !== owner.id) return
+      savedVersion.current++
+      const key = `${owner.id}:${event.kind}:${event.after.id}`
+      if (
+        (acknowledged.current.get(key)?.after.revision ?? -1) <
+        event.after.revision
+      )
+        acknowledged.current.set(key, event)
+      void (async () => {
+        if (event.kind === "workouts") {
+          const cached = await readCachedPlans(owner.id)
+          const next =
+            cached?.workouts.find((value) => value.id === event.after.id) ??
+            event.after
+          if (live) setWorkouts((values) => upsertRecord(values, next))
+        } else {
+          const next =
+            (await readCachedSession(owner.id, event.after.id)) ?? event.after
+          if (live) setSessions((values) => upsertRecord(values, next))
+        }
+        if (live) invalidateLedger()
+      })().catch(() => {
+        if (live) invalidateLedger()
+      })
+    })
+    return () => {
+      live = false
+      unsubscribe()
     }
-  }, [owner, weekId])
+  }, [owner, invalidateLedger])
   useEffect(() => {
     let live = true
     async function initialize() {
@@ -178,7 +270,6 @@ function TrackerContent() {
         setOwner(identity)
         sessionStorage.setItem("training-owner", JSON.stringify(identity))
         await refresh()
-        setPendingCount((await listPending(identity.id)).length)
       } catch (e) {
         if (!navigator.onLine) {
           const saved = sessionStorage.getItem("training-owner")
@@ -257,15 +348,25 @@ function TrackerContent() {
         }
         if (!location.sessionId && location.workoutId) {
           const cachedPlans = await readCachedPlans(owner.id)
-          const workout = navigator.onLine
-            ? await api.getWorkout(location.workoutId)
-            : cachedPlans?.workouts.find((w) => w.id === location.workoutId)
+          const pendingPlan = await offlineDb.planEdits.get(
+            `${owner.id}:${location.workoutId}`
+          )
+          const workout =
+            pendingPlan?.value.revision === 0
+              ? pendingPlan.value
+              : navigator.onLine
+                ? await api.getWorkout(location.workoutId)
+                : cachedPlans?.workouts.find((w) => w.id === location.workoutId)
           if (!workout)
             throw new Error(
               "Open this workout while connected to cache it on this device."
             )
+          setWorkouts((values) => [
+            ...values.filter((value) => value.id !== workout.id),
+            workout,
+          ])
           const candidates = navigator.onLine
-            ? await api.listSessions()
+            ? await api.listSessions({ workoutId: workout.id })
             : await listCachedSessions(owner.id)
           const existing = workoutSession(workout.id, candidates)
           if (existing) {
@@ -280,15 +381,41 @@ function TrackerContent() {
         setTab(location.tab)
         if (location.weekId) setWeekId(location.weekId)
         setActive(session)
-        setEditingWorkout(null)
+        if (location.editor) {
+          const kind =
+            location.editor === "planned" || location.editor === "routine"
+              ? location.editor
+              : null
+          const cached = await readCachedPlans(owner.id)
+          const date =
+            cached?.weeks.find((value) => value.id === location.weekId)
+              ?.startDate ?? today()
+          const editor = kind
+            ? blankWorkout(kind, location.weekId, date)
+            : await api.getWorkout(location.editor)
+          if (!live || version !== navigationVersion.current) return
+          setEditingWorkout(editor)
+        } else setEditingWorkout(null)
         setEditingWeek(null)
         setGoalsMode(null)
         setCopying(false)
         setRoutinePicker(false)
         setError("")
       } catch (error) {
-        if (live && version === navigationVersion.current)
+        if (live && version === navigationVersion.current) {
+          if (
+            error instanceof ApiError &&
+            (error.code === "record_deleted" || error.status === 404)
+          ) {
+            writeLocation(
+              { tab: "week", weekId: location.weekId, sessionId: null },
+              true
+            )
+            setActive(null)
+            setTab("week")
+          }
           setError(errorMessage(error))
+        }
       } finally {
         if (live && version === navigationVersion.current) {
           setOpeningWorkout(false)
@@ -311,53 +438,190 @@ function TrackerContent() {
       writeLocation({ ...parseLocation(window.location.search), weekId }, true)
     }
   }, [owner, weekId])
+  useAutosaveCoordinator(loading ? undefined : owner?.id)
   useEffect(() => {
-    if (!owner) return
-    return subscribePending(
-      owner.id,
-      (entries) => setPendingCount(entries.length),
-      (e) => setError(errorMessage(e))
-    )
-  }, [owner])
-  useEffect(() => {
-    const changed = async () => {
-      setOnline(navigator.onLine)
-      if (owner && navigator.onLine) {
-        await flushQueue(owner.id)
-        await refreshSync()
-      }
-    }
-    const handler = () => {
-      void changed().catch((e) => setError(errorMessage(e)))
-    }
-    window.addEventListener("online", handler)
-    window.addEventListener("offline", handler)
+    const changed = () => setOnline(navigator.onLine)
+    window.addEventListener("online", changed)
+    window.addEventListener("offline", changed)
     return () => {
-      window.removeEventListener("online", handler)
-      window.removeEventListener("offline", handler)
+      window.removeEventListener("online", changed)
+      window.removeEventListener("offline", changed)
     }
-  }, [owner, refreshSync])
+  }, [])
   useEffect(() => {
     let live = true
-    if (weekId && online)
-      api
-        .ledger(weekId)
-        .then((value) => {
-          if (live) {
-            setLedger(value)
-            setLedgerErrorWeekId("")
-          }
-        })
-        .catch((e) => {
-          if (live) {
-            setLedgerErrorWeekId(weekId)
-            setError(errorMessage(e))
-          }
-        })
+    const timeout = setTimeout(() => {
+      if (weekId && online && owner)
+        api
+          .ledger(weekId)
+          .then((value) => {
+            if (live) {
+              setLedger(value)
+              setLedgerErrorWeekId("")
+            }
+          })
+          .catch((e) => {
+            if (live) {
+              setLedgerErrorWeekId(weekId)
+              setError(errorMessage(e))
+            }
+          })
+    }, 100)
     return () => {
       live = false
+      clearTimeout(timeout)
     }
-  }, [weekId, online, workouts])
+  }, [owner, weekId, online, ledgerVersion])
+  useEffect(() => {
+    readVersion.current++
+  }, [owner, weekId])
+  useEffect(() => {
+    if (!owner || loading || !weekId) return
+    const timeout = setTimeout(() => {
+      void refreshSync().catch(() => {
+        /* Keep the cached week usable during a transient failure. */
+      })
+    }, 0)
+    return () => clearTimeout(timeout)
+  }, [owner, loading, weekId, refreshSync])
+  useEffect(() => {
+    if (!owner || loading) return
+    let live = true
+    let working = false
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const revalidate = async () => {
+      if (
+        working ||
+        !navigator.onLine ||
+        document.visibilityState !== "visible"
+      )
+        return
+      working = true
+      const navigation = navigationVersion.current
+      let deletedWorkoutId: string | null = null
+      let readingActive = false
+      try {
+        await persistenceRef.current
+        const current = activeRef.current
+        const editor = editorRef.current
+        // Reconcile the mounted record before refreshing the week cache so its
+        // baseline still describes the version the editor has already received.
+        const cached = current
+          ? await offlineDb.sessions.get(`${owner.id}:${current.id}`)
+          : undefined
+        const planId = current?.workoutId ?? editor?.id
+        const plans = planId ? await offlineDb.plans.get(owner.id) : undefined
+        const planBaseline = plans?.workouts.find(
+          (value) => value.id === planId
+        )
+        if (!live || navigation !== navigationVersion.current) return
+        if (current && (cached?.serverRevision ?? current.revision) > 0) {
+          readingActive = true
+          const remote = await api.getSession(current.id)
+          if (
+            !live ||
+            navigation !== navigationVersion.current ||
+            activeRef.current?.id !== current.id
+          )
+            return
+          // A save may finish while the GET is in flight. Its acknowledgement is
+          // already merged, and replaying it could undo a more recent local edit.
+          const latest = await offlineDb.sessions.get(
+            `${owner.id}:${current.id}`
+          )
+          let baseline = latest?.base ?? cached?.base ?? current
+          await cacheSession(owner.id, remote)
+          const acknowledgedEdit = acknowledged.current.get(
+            `${owner.id}:sessions:${current.id}`
+          )
+          if (
+            acknowledgedEdit?.kind === "sessions" &&
+            acknowledgedEdit.after.revision > baseline.revision
+          )
+            baseline = acknowledgedEdit.after
+          if (remote.revision > baseline.revision)
+            publishSaved({
+              ownerId: owner.id,
+              kind: "sessions",
+              before: baseline,
+              after: remote,
+            })
+        } else if (planId) {
+          if (!planBaseline || !planBaseline.revision) return
+          deletedWorkoutId = planId
+          readingActive = true
+          const remote = await api.getWorkout(planId)
+          if (
+            !live ||
+            navigation !== navigationVersion.current ||
+            (current
+              ? activeRef.current?.id !== current.id
+              : editorRef.current?.id !== planId)
+          )
+            return
+          const latest = await offlineDb.plans.get(owner.id)
+          let baseline =
+            latest?.workouts.find((value) => value.id === planId) ??
+            planBaseline
+          await cacheWorkout(owner.id, remote)
+          const acknowledgedEdit = acknowledged.current.get(
+            `${owner.id}:workouts:${planId}`
+          )
+          if (
+            acknowledgedEdit?.kind === "workouts" &&
+            acknowledgedEdit.after.revision > baseline.revision
+          )
+            baseline = acknowledgedEdit.after
+          if (remote.revision > baseline.revision)
+            publishSaved({
+              ownerId: owner.id,
+              kind: "workouts",
+              before: baseline,
+              after: remote,
+            })
+        }
+      } catch (error) {
+        if (!live || navigation !== navigationVersion.current) return
+        if (
+          readingActive &&
+          error instanceof ApiError &&
+          (error.status === 404 || error.code === "record_deleted")
+        ) {
+          const current = activeRef.current
+          if (current || deletedWorkoutId) {
+            await purgeWorkout(owner.id, {
+              workoutId: deletedWorkoutId,
+              sessionIds: current ? [current.id] : [],
+            })
+            setActive(null)
+            setEditingWorkout(null)
+            setTab("week")
+            writeLocation({ tab: "week", weekId, sessionId: null }, true)
+          }
+        }
+        // Retain the usable local view on a transient foreground refresh failure.
+      } finally {
+        if (live && navigation === navigationVersion.current)
+          await refreshSync().catch(() => undefined)
+        working = false
+      }
+    }
+    const schedule = () => {
+      if (document.visibilityState !== "visible") return
+      clearTimeout(timeout)
+      timeout = setTimeout(() => void revalidate(), 100)
+    }
+    window.addEventListener("focus", schedule)
+    window.addEventListener("online", schedule)
+    document.addEventListener("visibilitychange", schedule)
+    return () => {
+      live = false
+      clearTimeout(timeout)
+      window.removeEventListener("focus", schedule)
+      window.removeEventListener("online", schedule)
+      document.removeEventListener("visibilitychange", schedule)
+    }
+  }, [owner, loading, weekId, refreshSync])
   async function act(fn: () => Promise<void>) {
     setBusy(true)
     setError("")
@@ -375,6 +639,7 @@ function TrackerContent() {
     const version = ++navigationVersion.current
     setOpeningWorkout(true)
     try {
+      if (navigator.onLine) session = await api.getSession(session.id)
       await cacheSession(owner.id, session)
       const loaded = (await readCachedSession(owner.id, session.id)) ?? session
       if (version !== navigationVersion.current) return
@@ -392,8 +657,17 @@ function TrackerContent() {
     const version = ++navigationVersion.current
     setOpeningWorkout(true)
     try {
+      const pending = await offlineDb.planEdits.get(`${owner.id}:${workout.id}`)
+      if (pending) workout = pending.value
+      else if (navigator.onLine && workout.revision > 0)
+        workout = await api.getWorkout(workout.id)
+      if (version !== navigationVersion.current) return
+      setWorkouts((values) => [
+        ...values.filter((value) => value.id !== workout.id),
+        workout,
+      ])
       const candidates = navigator.onLine
-        ? await api.listSessions()
+        ? await api.listSessions({ workoutId: workout.id })
         : await listCachedSessions(owner.id)
       if (version !== navigationVersion.current) return
       const existing = workoutSession(workout.id, candidates)
@@ -417,19 +691,12 @@ function TrackerContent() {
     }
   }
   function newWorkout(kind: "planned" | "routine" = "planned") {
-    setEditingWorkout({
-      id: crypto.randomUUID(),
-      revision: 0,
-      kind,
-      routineId: null,
-      weekId: kind === "planned" ? weekId : null,
-      date: kind === "planned" ? (week?.startDate ?? today()) : null,
-      title: "",
-      focus: "",
-      blocks: [],
-      notes: "",
-      source: null,
-    })
+    writeLocation({ tab, weekId, sessionId: null, editor: kind })
+    setEditingWorkout(blankWorkout(kind, weekId, week?.startDate ?? today()))
+  }
+  function closeEditor() {
+    setEditingWorkout(null)
+    writeLocation({ tab, weekId, sessionId: null }, true)
   }
   async function logout() {
     if (!owner) return
@@ -442,7 +709,10 @@ function TrackerContent() {
       ))
     )
       return
+    await disablePhoneNotifications(owner.id).catch(() => undefined)
     await api.signOut()
+    ownerIdRef.current = null
+    readVersion.current++
     sessionStorage.removeItem("training-owner")
     setOwner(null)
     setRouteReady(false)
@@ -546,11 +816,30 @@ function TrackerContent() {
     <DisplayProvider key={owner.id} ownerId={owner.id}>
       <TimerProvider ownerId={owner.id}>
         <div
-          className={
-            sidebarCollapsed ? "app-shell sidebar-collapsed" : "app-shell"
-          }
+          className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${active || openingWorkout ? "focused-workout" : ""}`}
         >
           <aside className="sidebar">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={
+                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+              onClick={() => {
+                const collapsed = !sidebarCollapsed
+                setSidebarCollapsed(collapsed)
+                localStorage.setItem(
+                  "training-sidebar-collapsed",
+                  String(collapsed)
+                )
+              }}
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen size={18} />
+              ) : (
+                <PanelLeftClose size={18} />
+              )}
+            </Button>
             <Link href="/" className="brand">
               <span className="brand-mark">
                 <Dumbbell size={22} />
@@ -569,9 +858,6 @@ function TrackerContent() {
                 >
                   <Icon size={19} />
                   <span>{label}</span>
-                  {id === "profile" && pendingCount > 0 && (
-                    <span className="nav-count">{pendingCount}</span>
-                  )}
                 </button>
               ))}
             </nav>
@@ -604,51 +890,9 @@ function TrackerContent() {
             </div>
           </aside>
           <div className="workspace">
-            <header className="topbar">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="sidebar-toggle"
-                aria-label={
-                  sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-                }
-                aria-expanded={!sidebarCollapsed}
-                onClick={() => {
-                  const collapsed = !sidebarCollapsed
-                  setSidebarCollapsed(collapsed)
-                  localStorage.setItem(
-                    "training-sidebar-collapsed",
-                    String(collapsed)
-                  )
-                }}
-              >
-                {sidebarCollapsed ? (
-                  <PanelLeftOpen size={20} />
-                ) : (
-                  <PanelLeftClose size={20} />
-                )}
-              </Button>
-              <span className="mobile-brand">Training log</span>
-              <span className="breadcrumb">
-                Workspace <ChevronRight size={12} />{" "}
-                {active || openingWorkout
-                  ? "Workout"
-                  : nav.find((n) => n.id === tab)?.label}
-              </span>
-              {(!online || pendingCount > 0) && (
-                <button
-                  className={`connection ${online ? "" : "is-offline"}`}
-                  onClick={() => void navigate("profile")}
-                >
-                  <WifiOff size={14} />
-                  {online
-                    ? pendingCount
-                      ? `${pendingCount} pending`
-                      : ""
-                    : "Offline"}
-                </button>
-              )}
-            </header>
+            <div className="connection-strip">
+              {!active && <AutosaveStatus ownerId={owner.id} />}
+            </div>
             <main
               className={`main-content ${active || openingWorkout ? "session-content" : ""}`}
             >
@@ -680,12 +924,23 @@ function TrackerContent() {
                     plan={workouts.find(
                       (workout) => workout.id === active.workoutId
                     )}
-                    onPlanSaved={refresh}
+                    onDeleted={async () => {
+                      leaveRef.current = null
+                      navigationVersion.current++
+                      writeLocation(
+                        { tab: "week", weekId, sessionId: null },
+                        true
+                      )
+                      setActive(null)
+                      setTab("week")
+                      await refreshSync()
+                    }}
                     onBeforeLeave={(guard) => {
                       leaveRef.current = guard
                     }}
                     ownerId={owner.id}
                     exercises={exercises}
+                    equipment={equipment}
                     onBack={() => {
                       if (window.history.state?.trainingFrom)
                         window.history.back()
@@ -697,7 +952,7 @@ function TrackerContent() {
                       void refreshSync().catch((e) => setError(errorMessage(e)))
                     }}
                     onSaved={() => {
-                      void refreshSync().catch(() => undefined)
+                      invalidateLedger()
                     }}
                     onPersistence={(promise) => {
                       persistenceRef.current = promise
@@ -782,7 +1037,15 @@ function TrackerContent() {
                               <button
                                 className="routine-row"
                                 key={routine.id}
-                                onClick={() => setEditingWorkout(routine)}
+                                onClick={() => {
+                                  writeLocation({
+                                    tab,
+                                    weekId,
+                                    sessionId: null,
+                                    editor: routine.id,
+                                  })
+                                  setEditingWorkout(routine)
+                                }}
                               >
                                 <strong>{routine.title}</strong>
                                 <span>
@@ -834,12 +1097,21 @@ function TrackerContent() {
           </nav>
           {editingWorkout && (
             <WorkoutEditor
+              ownerId={owner.id}
+              draftKey={
+                editingWorkout.revision
+                  ? `plan:${editingWorkout.id}`
+                  : `new:${editingWorkout.kind}:${editingWorkout.weekId ?? "library"}`
+              }
               workout={editingWorkout}
               exercises={exercises}
-              onClose={() => setEditingWorkout(null)}
-              onSave={async (value) => {
-                await api.saveWorkout(value)
-                await refresh()
+              equipment={equipment}
+              onClose={closeEditor}
+              onSave={async (value, base) => {
+                const saved = await savePlanEdit(owner.id, value, base)
+                const cached = await readCachedPlans(owner.id)
+                if (cached) setWorkouts(cached.workouts)
+                return saved
               }}
             />
           )}
@@ -998,4 +1270,24 @@ function TrackerContent() {
       </TimerProvider>
     </DisplayProvider>
   )
+}
+
+function blankWorkout(
+  kind: "planned" | "routine",
+  weekId: string,
+  date: string
+): WorkoutRecord {
+  return {
+    id: crypto.randomUUID(),
+    revision: 0,
+    kind,
+    routineId: null,
+    weekId: kind === "planned" ? weekId : null,
+    date: kind === "planned" ? date : null,
+    title: "",
+    focus: "",
+    blocks: [newGroup([])],
+    notes: "",
+    source: null,
+  }
 }

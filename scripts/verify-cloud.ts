@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process"
 import { readFile } from "node:fs/promises"
 import { createHash, randomUUID } from "node:crypto"
+import { isDeepStrictEqual } from "node:util"
 import { parse } from "dotenv"
 import { changeWorkoutTimer, elapsedMilliseconds, settleWorkoutPause } from "../lib/timers"
 import { workoutDraft } from "../lib/workout-draft"
@@ -172,6 +173,12 @@ try {
     },
   })
   const item = makeItem(exercise, 1)
+  item.noteEntries = [{ id: randomUUID(), text: "Control each repetition." }]
+  item.repetitionMode = "range"
+  if (process.argv.includes("--groups")) {
+    item.restSeconds = 45
+    item.automaticRest = true
+  }
   const workout = success("/api/v1/workouts", "POST", {
     value: {
       id: randomUUID(),
@@ -188,7 +195,7 @@ try {
         {
           id: randomUUID(),
           title: "Strength",
-          kind: "straight",
+          kind: process.argv.includes("--groups") ? "group" : "straight",
           restSeconds: 90,
           rounds: null,
           items: [item],
@@ -201,6 +208,12 @@ try {
   let session: SessionRecord = success("/api/v1/sessions", "POST", {
     value: workoutDraft(workout),
   })
+  session.blocks[0].items[0].noteEntries = [
+    { ...item.noteEntries[0], text: "Session-specific instruction." },
+  ]
+  session.movementNotes = {
+    [item.id]: [{ id: randomUUID(), text: "Session-only note." }],
+  }
   session.results = [
     {
       id: randomUUID(),
@@ -245,6 +258,33 @@ try {
   const saved = success(`/api/v1/sessions/${session.id}`)
   if (saved.status !== "completed" || saved.results[0]?.reps !== 8)
     throw new Error("Saved workout did not persist")
+  const savedPlan = success(`/api/v1/workouts/${workout.id}`)
+  const exportedNotes = success("/api/v1/export").sessions.find((row: SessionRecord) => row.id === session.id)
+  if (
+    savedPlan.blocks[0].items[0].noteEntries?.[0]?.text !== "Control each repetition." ||
+    savedPlan.blocks[0].items[0].repetitionMode !== "range" ||
+    saved.blocks[0].items[0].noteEntries?.[0]?.text !== "Session-specific instruction." ||
+    saved.movementNotes?.[item.id]?.[0]?.text !== "Session-only note." ||
+    JSON.stringify(exportedNotes?.movementNotes) !== JSON.stringify(saved.movementNotes)
+  ) throw new Error("Movement notes lost scope or failed persistence/export")
+  console.log("Workout instructions, session notes, rep range and export preserve their scope.")
+  if (process.argv.includes("--groups")) {
+    if (savedPlan.blocks[0].kind !== "group" || savedPlan.blocks[0].items[0].restSeconds !== 45 || saved.blocks[0].items[0].automaticRest !== true)
+      throw new Error("Group or movement rest settings failed persistence")
+    const beforeLedger = success(`/api/v1/ledger?weekId=${week.id}`)
+    const destination = { ...saved.blocks[0], id: randomUUID(), title: "Group 2", notes: "Destination instruction" }
+    const moved = success(`/api/v1/sessions/${saved.id}`, "PUT", {
+      expectedRevision: saved.revision,
+      value: { ...saved, blocks: [{...saved.blocks[0], items: []}, destination] },
+    })
+    if (!isDeepStrictEqual(moved.results, saved.results) || moved.blocks[1].items[0].id !== item.id || moved.blocks[1].items[0].restSeconds !== 45 || moved.movementNotes?.[item.id]?.[0]?.text !== "Session-only note.")
+      throw new Error("Moving a movement lost its results, rest or notes")
+    if (!isDeepStrictEqual(success(`/api/v1/ledger?weekId=${week.id}`), beforeLedger))
+      throw new Error("Organizing groups changed ledger credit")
+    Object.assign(saved, success(`/api/v1/sessions/${saved.id}`))
+    console.log("Production groups, movement rest, moving logged results and unchanged ledger passed.")
+  }
+
   const catalog = success(`/api/v1/exercises/${exercise.id}`)
   success(`/api/v1/exercises/${exercise.id}`, "PUT", {
     expectedRevision: catalog.revision,

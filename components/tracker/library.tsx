@@ -3,7 +3,7 @@
 import { confirmAction } from "./responsive-panel"
 
 import { useMemo, useState } from "react"
-import { Dumbbell, Plus, Search } from "lucide-react"
+import { ChevronRight, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api-client"
@@ -113,7 +113,10 @@ export function Library({
               exercise.secondaryMuscles.map(normalizeMuscle).filter(Boolean)
             ),
           ],
-          trackingFields: trackingFields(exercise),
+          trackingFields: trackingFields(
+            exercise,
+            equipmentById.get(exercise.equipmentId ?? "")
+          ),
         })
       if (machine) await api.saveEquipment(machine)
       await onRefresh()
@@ -254,9 +257,6 @@ export function Library({
                   openExercise(e)
                 }}
               >
-                <span className="library-icon">
-                  <Dumbbell size={20} />
-                </span>
                 <div>
                   <h3>{e.name}</h3>
                   <p>{e.equipment || "No equipment"}</p>
@@ -269,6 +269,7 @@ export function Library({
                     {e.archived && <span className="small-tag">Archived</span>}
                   </div>
                 </div>
+                <ChevronRight size={18} aria-hidden="true" />
               </button>
             ))
           : visibleEquipment.map((e) => (
@@ -280,9 +281,6 @@ export function Library({
                   openMachine(e)
                 }}
               >
-                <span className="library-icon">
-                  <Dumbbell size={20} />
-                </span>
                 <div>
                   <h3>{e.name}</h3>
                   <p>
@@ -297,6 +295,7 @@ export function Library({
                   )}
                   {e.archived && <span className="small-tag">Archived</span>}
                 </div>
+                <ChevronRight size={18} aria-hidden="true" />
               </button>
             ))}
       </div>
@@ -441,7 +440,10 @@ export function Library({
                 <legend className="mb-2 text-sm font-medium">Track</legend>
                 <div className="row">
                   {trackingOptions.map((field) => {
-                    const fields = trackingFields(exercise)
+                    const fields = trackingFields(
+                      exercise,
+                      equipmentById.get(exercise.equipmentId ?? "")
+                    )
                     return (
                       <label className="check-label" key={field.value}>
                         <input
@@ -465,7 +467,10 @@ export function Library({
                   })}
                 </div>
               </fieldset>
-              {trackingFields(exercise).includes("load") && (
+              {trackingFields(
+                exercise,
+                equipmentById.get(exercise.equipmentId ?? "")
+              ).includes("load") && (
                 <Field label="Default load">
                   <LoadEditor
                     value={exercise.defaultLoad}

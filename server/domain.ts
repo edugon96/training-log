@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { demand } from "./errors";
 import { muscleNames, type SessionRecord, type WorkoutRecord, type WorkoutBlock, type WeekRecord, type ExerciseRecord, type LedgerRecord } from "../contracts/models";
-import { trackingFields } from "../contracts/training";
+import { inferredStatus, trackingFields } from "../contracts/training";
 
 export function validateBlocks(blocks: WorkoutBlock[]) {
   const ids = new Set<string>();
@@ -11,6 +11,11 @@ export function validateBlocks(blocks: WorkoutBlock[]) {
     for (const item of block.items) {
       demand(!ids.has(item.id), 422, "duplicate_id", "Item IDs must be unique");
       ids.add(item.id);
+      const noteIds = new Set<string>();
+      for (const note of item.noteEntries ?? []) {
+        demand(!noteIds.has(note.id), 422, "duplicate_id", "Note IDs must be unique within a movement");
+        noteIds.add(note.id);
+      }
       for (const target of item.sets) {
         demand(!ids.has(target.id), 422, "duplicate_id", "Set IDs must be unique");
         ids.add(target.id);
@@ -21,6 +26,10 @@ export function validateBlocks(blocks: WorkoutBlock[]) {
 export function validateSession(session: SessionRecord) {
   validateBlocks(session.blocks);
   const items = new Map(session.blocks.flatMap(b => b.items).map(i => [i.id, i]));
+  for (const [itemId, notes] of Object.entries(session.movementNotes ?? {})) {
+    demand(items.has(itemId), 422, "invalid_note", "Note movement is not in the session");
+    demand(new Set(notes.map(note => note.id)).size === notes.length, 422, "duplicate_id", "Session note IDs must be unique within a movement");
+  }
   const resultIds = new Set<string>();
   const targets = new Set<string>();
   for (const result of session.results) {
@@ -28,6 +37,9 @@ export function validateSession(session: SessionRecord) {
     resultIds.add(result.id);
     const item = items.get(result.itemId);
     demand(item, 422, "invalid_result", "Result item is not in the session");
+    if (session.loggingMode === "checked" && result.status === "completed") {
+      demand(inferredStatus(item, result) === "completed", 422, "incomplete_set", "Enter every tracked value before checking a set");
+    }
     if (result.targetId) {
       demand(item.sets.some(s => s.id === result.targetId), 422, "invalid_result", "Result target does not belong to its item");
       demand(!targets.has(result.targetId), 422, "duplicate_result", "Only one result is allowed per target");
@@ -44,7 +56,9 @@ export function validateSession(session: SessionRecord) {
     const end = session.finishedAt || session.timerPausedAt;
     demand(!end || session.pausedDurationMs <= Date.parse(end) - Date.parse(session.startedAt!), 422, "invalid_time", "Paused time cannot exceed workout duration");
   }
-  if (session.loggingMode === "automatic" && (session.status === "completed" || session.finishedAt)) {
+  // Stopping the clock leaves the workout open for logging. Only completing
+  // the workout requires every set to be resolved.
+  if ((session.loggingMode === "automatic" || session.loggingMode === "checked") && session.status === "completed") {
     const logged = new Map(session.results.filter(result => result.targetId).map(result => [result.targetId, result]));
     const unresolved = session.blocks.flatMap(block => block.items.flatMap(item =>
       item.sets.filter(target => !logged.has(target.id) || logged.get(target.id)!.status === "unlogged")
@@ -74,7 +88,7 @@ export function computeLedger(week: WeekRecord, workouts: WorkoutRecord[], sessi
   for (const workout of workouts.filter(w => w.weekId === week.id && w.kind === "planned")) {
     for (const item of workout.blocks.flatMap(b => b.items)) {
       if (item.role === "lifting" && item.primaryMuscle) {
-        lookup.get(item.primaryMuscle)!.planned += item.sets.filter(s => s.kind === "working").length;
+        lookup.get(item.primaryMuscle)!.planned += item.sets.filter(s => s.kind !== "warmup").length;
       }
     }
   }
@@ -82,7 +96,7 @@ export function computeLedger(week: WeekRecord, workouts: WorkoutRecord[], sessi
     const logged = new Map(session.results.filter(r => r.targetId).map(r => [r.targetId, r]));
     for (const item of session.blocks.flatMap(b => b.items)) {
       if (item.role !== "lifting" || !item.primaryMuscle) continue;
-      for (const set of item.sets.filter(s => s.kind === "working")) {
+      for (const set of item.sets.filter(s => s.kind !== "warmup")) {
         const result = logged.get(set.id);
         if (result?.status === "completed") lookup.get(item.primaryMuscle)!.completed++;
         else if (!result || result.status === "unlogged") unloggedSets++;
@@ -99,16 +113,21 @@ export function findPrevious(exercise: ExerciseRecord, routineId: string | null,
   const matching = candidates.flatMap(session => {
     const items = session.blocks.flatMap(b => b.items).filter(i =>
       identities.some(identity => i.exerciseId === identity.exerciseId && i.equipment === identity.equipment && i.setup === identity.setup));
-    const ids = new Set(items.map(i => i.id));
-    const results = session.results.filter(r => ids.has(r.itemId) && r.status === "completed");
-    return results.length ? [{ session, results }] : [];
+    const results = items.flatMap(item => {
+      const order = new Map(item.sets.map((target, index) => [target.id, index]));
+      return session.results.filter(r => r.itemId === item.id && r.status === "completed")
+        .sort((a, b) => (order.get(a.targetId ?? "") ?? Infinity) - (order.get(b.targetId ?? "") ?? Infinity));
+    });
+    return results.length ? [{ session, results, targets: items.flatMap(item => item.sets) }] : [];
   });
-  const preferred = routineId ? matching.find(m => m.session.routineId === routineId) : undefined;
-  const match = preferred ?? matching[0];
+  const match = matching[0];
   return match ? { sessionId: match.session.id, date: match.session.performedOn, title: match.session.title,
-    match: preferred ? "routine" as const : "exercise" as const, results: match.results, notes: match.session.notes } : null;
+    match: routineId && match.session.routineId === routineId ? "routine" as const : "exercise" as const,
+    results: match.results, targets: match.targets, notes: match.session.notes } : null;
 }
 export function cloneBlocks(blocks: WorkoutBlock[]) {
   return blocks.map(b => ({ ...structuredClone(b), id: randomUUID(),
-    items: b.items.map(i => ({ ...structuredClone(i), id: randomUUID(), sets: i.sets.map(s => ({ ...structuredClone(s), id: randomUUID() })) })) }));
+    items: b.items.map(i => ({ ...structuredClone(i), id: randomUUID(),
+      ...(i.noteEntries ? { noteEntries: i.noteEntries.map(note => ({ ...note, id: randomUUID() })) } : {}),
+      sets: i.sets.map(s => ({ ...structuredClone(s), id: randomUUID() })) })) }));
 }

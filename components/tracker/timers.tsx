@@ -7,16 +7,19 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { ArrowDown, ArrowUp, Plus, Timer, X } from "lucide-react"
+import { ArrowDown, ArrowUp, Plus, Timer, Volume2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api-client"
+import { TimerAudio, type TimerAudioStatus } from "@/lib/timer-audio"
+import { useTimerAlerts } from "@/lib/timer-alerts"
+import { readStoredRestTimer, writeStoredRestTimer } from "@/lib/timer-storage"
+import { NotificationSettings } from "./notification-settings"
 import {
   defaultTimerSettings,
   TimerSettings,
@@ -30,14 +33,18 @@ import {
   pauseRest,
   resetRest,
   remainingMilliseconds,
-  RestTimer,
   resumeRest,
   startRest,
+  workoutTimerRunning,
   type RestTimerState,
 } from "@/lib/timers"
 import { Modal, errorMessage } from "./shared"
 
 type TimerContextValue = {
+  ownerId: string
+  start: (duration: number, sessionId: string) => void
+  controls: ReactNode
+  bindSession: (id: string) => void
   timer: RestTimerState | null
   settings: TimerSettingsRecord
   editable: boolean
@@ -46,6 +53,9 @@ type TimerContextValue = {
   open: (sessionId?: string | null) => void
   cancelForSession: (id: string) => void
   saveSettings: (value: TimerSettingsRecord) => Promise<void>
+  prepareSound: () => void
+  testSound: () => void
+  soundStatus: TimerAudioStatus
 }
 const TimerContext = createContext<TimerContextValue | null>(null)
 export function useTimers() {
@@ -72,22 +82,36 @@ function useClock(enabled: boolean) {
     serverClock
   )
 }
-export function ElapsedTime({ session }: { session: SessionRecord }) {
-  const now = useClock(
-    session.status === "active" && !!session.startedAt && !session.timerPausedAt
-  )
+export function ElapsedTime({
+  session,
+  compact = false,
+}: {
+  session: SessionRecord
+  compact?: boolean
+}) {
+  const now = useClock(workoutTimerRunning(session))
   const elapsed = elapsedMilliseconds(session, now)
+  const untracked =
+    elapsed === null && (session.status === "completed" || !!session.finishedAt)
   return (
-    <span className="elapsed-time" aria-label="Workout duration">
+    <span
+      className="elapsed-time"
+      aria-label={
+        untracked ? "Workout duration not tracked" : "Workout duration"
+      }
+      title={untracked ? "Not tracked" : undefined}
+    >
       {elapsed === null
-        ? session.status === "completed"
-          ? "Not tracked"
+        ? untracked
+          ? compact
+            ? "—"
+            : "Not tracked"
           : "0:00"
         : clockLabel(elapsed, "up")}
     </span>
   )
 }
-function RestTime({ timer }: { timer: RestTimerState }) {
+export function RestTime({ timer }: { timer: RestTimerState }) {
   const now = useClock(timer.status === "running")
   return (
     <span className="tabular-nums">
@@ -119,21 +143,15 @@ export function TimerProvider({
   ownerId: string
   children: ReactNode
 }) {
-  const storageKey = `training-rest:${ownerId}`
   const settingsKey = `training-timer-settings:${ownerId}`
-  const [timer, setTimerState] = useState<RestTimerState | null>(() => {
-    try {
-      const saved = RestTimer.safeParse(
-        JSON.parse(sessionStorage.getItem(storageKey) ?? "null")
-      )
-      return saved.success && saved.data.status !== "complete"
-        ? saved.data
-        : null
-    } catch {
-      return null
-    }
-  })
+  const [timer, setTimerState] = useState<RestTimerState | null>(() =>
+    readStoredRestTimer(ownerId)
+  )
   const timerRef = useRef(timer)
+  const audio = useRef<TimerAudio | null>(null)
+  const soundEnabled = useRef(defaultTimerSettings.soundEnabled)
+  const [soundStatus, setSoundStatus] = useState<TimerAudioStatus>("idle")
+  const [message, setMessage] = useState("")
   const setTimer = useCallback(
     (
       value:
@@ -143,9 +161,15 @@ export function TimerProvider({
     ) => {
       const next = typeof value === "function" ? value(timerRef.current) : value
       timerRef.current = next
+      // Cancel old nodes within the control gesture, before React renders.
+      audio.current?.update(next, soundEnabled.current)
+      // Persist inside the gesture so an immediate iOS app termination cannot
+      // leave the scheduled phone alert without its matching local timer.
+      if (!writeStoredRestTimer(ownerId, next))
+        setMessage("This browser cannot retain the rest timer after reload.")
       setTimerState(next)
     },
-    []
+    [ownerId]
   )
   const selectionKey = `training-rest-duration:${ownerId}`
   const [selected, setSelected] = useState(() => {
@@ -175,14 +199,57 @@ export function TimerProvider({
       return defaultTimerSettings
     }
   })
+  const canSound = useCallback(
+    (timerId: string, deadline: number) =>
+      audio.current?.covers(timerId, deadline) ?? false,
+    []
+  )
+  useTimerAlerts(ownerId, timer, {
+    soundEnabled: settings.soundEnabled,
+    soundReady: soundStatus === "ready",
+    canSound,
+  })
   const [editable, setEditable] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState("")
   const [visible, setVisible] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const audio = useRef<AudioContext | null>(null)
   const savingRef = useRef(false)
-  const lastAlert = useRef<string | null>(null)
+  useEffect(() => {
+    const engine = new TimerAudio(setSoundStatus)
+    audio.current = engine
+    engine.preload()
+    engine.update(timerRef.current, soundEnabled.current)
+    const foreground = () => engine.foregroundChanged()
+    const interaction = () => {
+      if (soundEnabled.current && timerRef.current?.status === "running")
+        void engine.prepare()
+    }
+    document.addEventListener("visibilitychange", foreground)
+    window.addEventListener("focus", foreground)
+    window.addEventListener("pageshow", foreground)
+    // Touch activation is granted on pointer-up, not pointer-down, on iOS.
+    document.addEventListener("pointerup", interaction, { passive: true })
+    document.addEventListener("keydown", interaction)
+    return () => {
+      document.removeEventListener("visibilitychange", foreground)
+      window.removeEventListener("focus", foreground)
+      window.removeEventListener("pageshow", foreground)
+      document.removeEventListener("pointerup", interaction)
+      document.removeEventListener("keydown", interaction)
+      engine.dispose()
+      if (audio.current === engine) audio.current = null
+    }
+  }, [ownerId])
+  useEffect(() => {
+    soundEnabled.current = settings.soundEnabled
+    audio.current?.update(timer, settings.soundEnabled)
+  }, [timer, settings.soundEnabled])
+  const prepareSound = useCallback(() => {
+    if (soundEnabled.current) void audio.current?.prepare()
+  }, [])
+  const testSound = useCallback(() => {
+    void audio.current?.preview()
+  }, [])
   useEffect(() => {
     let live = true
     const refresh = () => {
@@ -213,19 +280,18 @@ export function TimerProvider({
       live = false
       window.removeEventListener("online", refresh)
       window.removeEventListener("offline", refresh)
-      void audio.current?.close()
     }
-  }, [storageKey, settingsKey])
+  }, [settingsKey])
   useEffect(() => {
     void Promise.resolve()
       .then(() => {
-        if (timer) sessionStorage.setItem(storageKey, JSON.stringify(timer))
-        else sessionStorage.removeItem(storageKey)
+        if (!writeStoredRestTimer(ownerId, timer))
+          setMessage("This browser cannot retain the rest timer after reload.")
       })
       .catch(() => {
         setMessage("This browser cannot retain the rest timer after reload.")
       })
-  }, [timer, storageKey])
+  }, [timer, ownerId])
   useEffect(() => {
     if (!timer || timer.status !== "running") return
     const complete = () => {
@@ -244,22 +310,6 @@ export function TimerProvider({
           ? { ...current, status: "complete", remainingMs: 0, deadline: null }
           : current
       )
-      if (lastAlert.current === timer.id) return
-      lastAlert.current = timer.id
-      if (settings.soundEnabled && audio.current?.state === "running") {
-        const oscillator = audio.current.createOscillator()
-        const gain = audio.current.createGain()
-        oscillator.connect(gain)
-        gain.connect(audio.current.destination)
-        oscillator.frequency.value = 880
-        gain.gain.setValueAtTime(0.12, audio.current.currentTime)
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          audio.current.currentTime + 0.35
-        )
-        oscillator.start()
-        oscillator.stop(audio.current.currentTime + 0.35)
-      }
     }
     const timeout = window.setTimeout(
       complete,
@@ -270,7 +320,7 @@ export function TimerProvider({
       clearTimeout(timeout)
       document.removeEventListener("visibilitychange", complete)
     }
-  }, [timer, settings.soundEnabled, setTimer])
+  }, [timer, setTimer])
   useEffect(() => {
     if (timer?.status !== "complete") return
     const id = timer.id
@@ -298,6 +348,8 @@ export function TimerProvider({
   const saveSettings = useCallback(
     async (value: TimerSettingsRecord) => {
       if (!editable || savingRef.current) return
+      // Unlock before the network request loses the user's activation.
+      if (value.soundEnabled) void audio.current?.prepare()
       savingRef.current = true
       setSaving(true)
       setMessage("")
@@ -325,51 +377,147 @@ export function TimerProvider({
     [editable, settingsKey]
   )
   const handleStart = useCallback(
-    (duration: number) => {
+    (duration: number, id: string | null = sessionId) => {
       try {
-        const next = startRest(duration, Date.now(), sessionId)
-        lastAlert.current = null
+        const next = startRest(duration, Date.now(), id)
         setSelected(duration)
         setCustomDraft(null)
         setMessage("")
         setTimer(next)
-        // Unlock audio in the gesture, without awaiting it or delaying state updates.
-        if (settings.soundEnabled) {
-          try {
-            audio.current ??= new AudioContext()
-            void audio.current.resume().catch(() => undefined)
-          } catch {
-            setMessage("Sound is unavailable in this browser.")
-          }
-        }
+        if (soundEnabled.current) void audio.current?.playStart()
       } catch (error) {
         setMessage(errorMessage(error))
       }
     },
-    [sessionId, settings.soundEnabled, setTimer]
+    [sessionId, setTimer]
   )
-  const context = useMemo(
-    () => ({
-      timer,
-      settings,
-      editable,
-      saving,
-      message,
-      open,
-      cancelForSession,
-      saveSettings,
-    }),
-    [
-      timer,
-      settings,
-      editable,
-      saving,
-      message,
-      open,
-      cancelForSession,
-      saveSettings,
-    ]
+  const bindSession = useCallback(
+    (id: string) => {
+      setSessionId(id)
+      setCustomDraft(null)
+      setTimer((current) => (current?.status === "complete" ? null : current))
+    },
+    [setTimer]
   )
+  const context: TimerContextValue = {
+    ownerId,
+    timer,
+    settings,
+    editable,
+    saving,
+    message,
+    open,
+    cancelForSession,
+    saveSettings,
+    prepareSound,
+    testSound,
+    soundStatus,
+    start: handleStart,
+    bindSession,
+    controls: (
+      <div className="clock-panel">
+        <RestDial timer={timer} selected={selected} customDraft={customDraft} />
+        <ClockControls
+          playing={customDraft === null && timer?.status === "running"}
+          playLabel={
+            customDraft !== null ||
+            !timer ||
+            timer.status === "complete" ||
+            timer.status === "idle"
+              ? "Start rest timer"
+              : timer.status === "running"
+                ? "Pause rest timer"
+                : "Resume rest timer"
+          }
+          resetLabel="Reset rest timer"
+          onReset={() => {
+            setCustomDraft(null)
+            setTimer(
+              resetRest(timer ?? startRest(selected, Date.now(), sessionId))
+            )
+          }}
+          onPlay={() => {
+            prepareSound()
+            if (customDraft !== null) handleStart(customDraft)
+            else if (
+              !timer ||
+              timer.status === "complete" ||
+              timer.status === "idle"
+            )
+              handleStart(selected)
+            else {
+              setTimer((current) =>
+                current
+                  ? current.status === "running"
+                    ? pauseRest(current, Date.now())
+                    : resumeRest(current, Date.now())
+                  : current
+              )
+              if (timer.status === "paused" && soundEnabled.current)
+                void audio.current?.playStart()
+            }
+          }}
+          onExtend={() => {
+            setCustomDraft(null)
+            prepareSound()
+            setTimer((current) =>
+              extendRest(
+                current ?? {
+                  ...startRest(selected, Date.now(), sessionId),
+                  status: "paused",
+                  deadline: null,
+                },
+                Date.now()
+              )
+            )
+          }}
+        />
+        <div className="timer-presets">
+          {settings.presets.map((duration) => (
+            <Button
+              key={duration}
+              variant="outline"
+              aria-pressed={
+                customDraft === null &&
+                timer?.status !== "idle" &&
+                (!timer ||
+                  (timer.progressDurationMs ?? timer.durationMs) ===
+                    timer.durationMs) &&
+                selected === duration
+              }
+              onClick={() => handleStart(duration)}
+            >
+              {clockLabel(duration * 1000)}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            aria-pressed={customDraft !== null}
+            onClick={() => {
+              prepareSound()
+              setCustomDraft(customDraft === null ? selected : null)
+            }}
+          >
+            Custom
+          </Button>
+        </div>
+        {customDraft !== null && (
+          <DurationRuler
+            value={customDraft}
+            onChange={(duration) => {
+              setCustomDraft(duration)
+              audio.current?.playTick()
+            }}
+          />
+        )}
+        {message && (
+          <p className="muted text-sm" role="status">
+            {message}
+          </p>
+        )}
+      </div>
+    ),
+  }
   return (
     <TimerContext.Provider value={context}>
       {children}
@@ -402,100 +550,7 @@ export function TimerProvider({
             )
           }}
         >
-          <div className="clock-panel">
-            <RestDial
-              timer={timer}
-              selected={selected}
-              customDraft={customDraft}
-            />
-            <ClockControls
-              playing={customDraft === null && timer?.status === "running"}
-              playLabel={
-                customDraft !== null ||
-                !timer ||
-                timer.status === "complete" ||
-                timer.status === "idle"
-                  ? "Start rest timer"
-                  : timer.status === "running"
-                    ? "Pause rest timer"
-                    : "Resume rest timer"
-              }
-              resetLabel="Reset rest timer"
-              onReset={() => {
-                setCustomDraft(null)
-                setTimer(
-                  resetRest(timer ?? startRest(selected, Date.now(), sessionId))
-                )
-              }}
-              onPlay={() => {
-                if (customDraft !== null) handleStart(customDraft)
-                else if (
-                  !timer ||
-                  timer.status === "complete" ||
-                  timer.status === "idle"
-                )
-                  handleStart(selected)
-                else
-                  setTimer((current) =>
-                    current
-                      ? current.status === "running"
-                        ? pauseRest(current, Date.now())
-                        : resumeRest(current, Date.now())
-                      : current
-                  )
-              }}
-              onExtend={() => {
-                setCustomDraft(null)
-                lastAlert.current = null
-                setTimer((current) =>
-                  extendRest(
-                    current ?? {
-                      ...startRest(selected, Date.now(), sessionId),
-                      status: "paused",
-                      deadline: null,
-                    },
-                    Date.now()
-                  )
-                )
-              }}
-            />
-            <div className="timer-presets">
-              {settings.presets.map((duration) => (
-                <Button
-                  key={duration}
-                  variant="outline"
-                  aria-pressed={
-                    customDraft === null &&
-                    timer?.status !== "idle" &&
-                    (!timer ||
-                      (timer.progressDurationMs ?? timer.durationMs) ===
-                        timer.durationMs) &&
-                    selected === duration
-                  }
-                  onClick={() => handleStart(duration)}
-                >
-                  {clockLabel(duration * 1000)}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                aria-pressed={customDraft !== null}
-                onClick={() =>
-                  setCustomDraft(customDraft === null ? selected : null)
-                }
-              >
-                Custom
-              </Button>
-            </div>
-            {customDraft !== null && (
-              <DurationRuler value={customDraft} onChange={setCustomDraft} />
-            )}
-            {message && (
-              <p className="muted text-sm" role="status">
-                {message}
-              </p>
-            )}
-          </div>
+          {context.controls}
         </Modal>
       )}
     </TimerContext.Provider>
@@ -537,8 +592,7 @@ function RestDial({
 }
 
 export function WorkoutDial({ session }: { session: SessionRecord }) {
-  const running =
-    session.status === "active" && !!session.startedAt && !session.timerPausedAt
+  const running = workoutTimerRunning(session)
   const now = useClock(running)
   const elapsed = elapsedMilliseconds(
     session,
@@ -548,7 +602,10 @@ export function WorkoutDial({ session }: { session: SessionRecord }) {
     <TimerFace
       mode="workout"
       label="Workout elapsed time"
-      milliseconds={elapsed ?? (session.status === "active" ? 0 : null)}
+      milliseconds={
+        elapsed ??
+        (session.status === "active" && !session.finishedAt ? 0 : null)
+      }
       active={running}
       paused={!!session.timerPausedAt}
       complete={session.status === "completed"}
@@ -585,7 +642,16 @@ function PresetInput({
   )
 }
 export function TimerSettingsEditor() {
-  const { settings, editable, saving, saveSettings, message } = useTimers()
+  const {
+    ownerId,
+    settings,
+    editable,
+    saving,
+    saveSettings,
+    message,
+    testSound,
+    soundStatus,
+  } = useTimers()
   const [newDuration, setNewDuration] = useState("240")
   const disabled = !editable || saving
   function move(index: number, direction: number) {
@@ -709,8 +775,30 @@ export function TimerSettingsEditor() {
             })
           }
         />
-        Sound on completion
+        Timer sounds
       </label>
+      <div className="row wrap">
+        <p className="muted text-sm">Crisp ticks, start and countdown cues.</p>
+        <Button variant="outline" onClick={testSound}>
+          <Volume2 size={16} />
+          Test sound
+        </Button>
+      </div>
+      {soundStatus === "unavailable" && (
+        <p className="muted text-sm" role="status">
+          Sound is unavailable in this browser.
+        </p>
+      )}
+      {soundStatus === "needs-gesture" && (
+        <p className="muted text-sm" role="status">
+          Tap Test sound to enable audio again.
+        </p>
+      )}
+      <p className="muted text-sm">
+        Sounds play while the app is open. Check your volume and Silent Mode if
+        the test is quiet.
+      </p>
+      <NotificationSettings ownerId={ownerId} />
     </div>
   )
 }

@@ -47,18 +47,21 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
   const errors: string[] = []
   page.on("pageerror", (error) => errors.push(error.message))
   await context.addInitScript(() => {
-    const state = { requests: 0, releases: 0 }
+    const state = { requests: 0, releases: 0, active: 0 }
     Object.assign(window, { __wake: state })
     Object.defineProperty(navigator, "wakeLock", {
       configurable: true,
       value: {
         request: async () => {
           state.requests++
+          state.active++
           const lock = Object.assign(new EventTarget(), {
             released: false,
             release: async () => {
+              if (lock.released) return
               lock.released = true
               state.releases++
+              state.active--
               lock.dispatchEvent(new Event("release"))
             },
           })
@@ -79,11 +82,11 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
       () =>
         (
           window as unknown as {
-            __wake: { requests: number; releases: number }
+            __wake: { requests: number; releases: number; active: number }
           }
         ).__wake
     )
-  await expect.poll(async () => (await wake()).requests).toBe(1)
+  await expect.poll(async () => (await wake()).active).toBe(1)
   async function post(path: string, data: unknown) {
     const response = await context.request.post(`/api/v1${path}`, {
       data,
@@ -241,9 +244,9 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
   await expect(
     page.getByRole("heading", { name: "Pull-up", exact: true })
   ).toBeVisible()
-  await expect(page.locator(".instructions strong")).toHaveText(
-    "Keep reps controlled."
-  )
+  await expect(
+    page.getByRole("textbox", { name: "Pull-up workout note", exact: true })
+  ).toHaveValue("**Keep reps controlled.**\n\nRest between sets.")
   await page.screenshot({
     path: "test-results/home-preview-mobile.png",
     animations: "disabled",
@@ -300,7 +303,7 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
   }
   await page.setViewportSize({ width: 390, height: 844 })
   await page.evaluate(() => scrollTo(0, 450))
-  expect((await page.locator(".topbar").boundingBox())!.y).toBeLessThan(0)
+  await expect(page.locator(".topbar")).toHaveCount(0)
   await expect(page.locator("html")).toHaveCSS("overscroll-behavior-y", "none")
   const nav = page.getByRole("navigation", { name: "Mobile navigation" })
   const middleTab = (await nav
@@ -316,16 +319,16 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
   await expect(
     page.getByText("Active while the app is visible.", { exact: true })
   ).toBeVisible()
-  expect((await wake()).requests).toBe(1)
+  expect((await wake()).active).toBe(1)
   await page.getByLabel("Keep screen awake", { exact: true }).uncheck()
-  await expect.poll(async () => (await wake()).releases).toBe(1)
+  await expect.poll(async () => (await wake()).active).toBe(0)
   await page.reload()
   await expect(
     page.getByLabel("Keep screen awake", { exact: true })
   ).not.toBeChecked()
   expect((await wake()).requests).toBe(0)
   await page.getByLabel("Keep screen awake", { exact: true }).check()
-  await expect.poll(async () => (await wake()).requests).toBe(1)
+  await expect.poll(async () => (await wake()).active).toBe(1)
   await nav.getByRole("button", { name: "Week", exact: true }).click()
   await page
     .getByRole("button", { name: "Open Lower strength", exact: true })
@@ -339,7 +342,7 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
         (await (await context.request.get("/api/v1/sessions")).json()).length
     )
     .toBe(sessionCount + 1)
-  await nav.getByRole("button", { name: "Week", exact: true }).click()
+  await page.getByRole("button", { name: "Back", exact: true }).click()
   await expect(
     page.getByRole("button", { name: "Open Lower strength", exact: true })
   ).toHaveCount(1)
@@ -366,6 +369,6 @@ test("compact Home, direct opening, progress, planning menu and device-local wak
   await expect(
     page.getByRole("button", { name: "Sign in", exact: true })
   ).toBeVisible()
-  await expect.poll(async () => (await wake()).releases).toBe(1)
+  await expect.poll(async () => (await wake()).active).toBe(0)
   expect(errors).toEqual([])
 })

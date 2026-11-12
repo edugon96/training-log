@@ -3,6 +3,7 @@ export type AppLocation = {
   tab: AppTab
   weekId: string
   sessionId: string | null
+  editor?: string | null
   workoutId?: string | null
 }
 const tabs: AppTab[] = ["week", "library", "profile"]
@@ -15,16 +16,21 @@ export function parseLocation(search: string): AppLocation {
   const week = params.get("week") ?? ""
   const session = params.get("session") ?? ""
   const workout = params.get("workout") ?? ""
+  const editor = params.get("editor") ?? ""
   return {
     tab: tabs.includes(tab) ? tab : "week",
     weekId: uuid.test(week) ? week : "",
     sessionId: uuid.test(session) ? session : null,
+    ...(["planned", "routine"].includes(editor) || uuid.test(editor)
+      ? { editor }
+      : {}),
     ...(uuid.test(workout) ? { workoutId: workout } : {}),
   }
 }
 export function locationUrl(location: AppLocation) {
   const params = new URLSearchParams({ tab: location.tab })
   if (location.weekId) params.set("week", location.weekId)
+  if (location.editor) params.set("editor", location.editor)
   if (location.sessionId) params.set("session", location.sessionId)
   else if (location.workoutId) params.set("workout", location.workoutId)
   return `/?${params}`

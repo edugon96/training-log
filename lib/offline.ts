@@ -7,13 +7,17 @@ import {
   type WeekRecord,
 } from "@/contracts/models"
 import { workoutDraft } from "./workout-draft"
-import { ApiError, getSession, saveSession } from "./api-client"
+import { ApiError, saveSession } from "./api-client"
+import { mergeSession, mergeSessionForSave } from "./autosave-merge"
+import { publishSaved } from "./autosave-events"
+import { saveRebased, saveFailure, type SaveRequest } from "./autosave-request"
 
 interface CachedSession {
   key: string
   ownerId: string
   session: SessionRecord
   serverRevision: number
+  base?: SessionRecord
 }
 export interface PendingSession {
   key: string
@@ -23,10 +27,42 @@ export interface PendingSession {
   version: string
   status: "pending" | "conflict" | "error"
   message?: string
+  failure?: "auth" | "invalid" | "network"
   server?: SessionRecord
-  request?: { key: string; version: string; session: SessionRecord }
+  base?: SessionRecord
+  legacyBase?: SessionRecord
+  readyAt?: number
+  request?: SaveRequest<SessionRecord> & { session?: SessionRecord }
 }
 class TrainingCache extends Dexie {
+  editorDrafts!: Table<
+    {
+      key: string
+      ownerId: string
+      value: WorkoutRecord
+      base?: WorkoutRecord
+    },
+    string
+  >
+  planEdits!: Table<
+    {
+      key: string
+      ownerId: string
+      value: WorkoutRecord
+      version: string
+      base?: WorkoutRecord
+      request?: SaveRequest<WorkoutRecord>
+      legacyBase?: WorkoutRecord
+      error?: string
+      failure?: "auth" | "invalid" | "network"
+    },
+    string
+  >
+  recoveries!: Table<
+    { key: string; ownerId: string; value: unknown; reason: string },
+    string
+  >
+  deleted!: Table<{ key: string; ownerId: string }, string>
   sessions!: Table<CachedSession, string>
   pending!: Table<PendingSession, string>
   history!: Table<
@@ -47,7 +83,12 @@ class TrainingCache extends Dexie {
     string
   >
   corrections!: Table<
-    { key: string; ownerId: string; session: SessionRecord },
+    {
+      key: string
+      ownerId: string
+      session: SessionRecord
+      base?: SessionRecord
+    },
     string
   >
   constructor() {
@@ -62,26 +103,170 @@ class TrainingCache extends Dexie {
       drafts: "key, ownerId",
       corrections: "key, ownerId",
     })
+    this.version(4).stores({
+      editorDrafts: "key, ownerId",
+      planEdits: "key, ownerId",
+      deleted: "key, ownerId",
+    })
+    this.version(5).stores({ recoveries: "key, ownerId" })
   }
 }
 export const offlineDb = new TrainingCache()
 const keyFor = (ownerId: string, id: string) => `${ownerId}:${id}`
+function reconcilePlans(
+  current: WorkoutRecord[],
+  incoming: WorkoutRecord[],
+  baseline: WorkoutRecord[],
+  weekId?: string
+) {
+  const values = new Map(current.map((value) => [value.id, value]))
+  const before = new Map(baseline.map((value) => [value.id, value]))
+  const present = new Set(incoming.map((value) => value.id))
+  for (const value of current) {
+    if (
+      (weekId === undefined || value.weekId === weekId) &&
+      !present.has(value.id) &&
+      before.get(value.id)?.revision === value.revision
+    )
+      values.delete(value.id)
+  }
+  for (const value of incoming) {
+    if ((values.get(value.id)?.revision ?? -1) <= value.revision)
+      values.set(value.id, value)
+  }
+  return [...values.values()]
+}
 export async function cachePlans(
   ownerId: string,
   weeks: WeekRecord[],
-  workouts: WorkoutRecord[]
+  workouts: WorkoutRecord[],
+  baseline?: WorkoutRecord[]
 ) {
-  await offlineDb.plans.put({ key: ownerId, ownerId, weeks, workouts })
+  await offlineDb.transaction(
+    "rw",
+    [offlineDb.plans, offlineDb.deleted],
+    async () => {
+      const current = await offlineDb.plans.get(ownerId)
+      const deleted = new Set(
+        (
+          await offlineDb.deleted.where("ownerId").equals(ownerId).toArray()
+        ).map((row) => row.key)
+      )
+      await offlineDb.plans.put({
+        key: ownerId,
+        ownerId,
+        weeks,
+        workouts: reconcilePlans(
+          current?.workouts ?? [],
+          workouts,
+          baseline ?? current?.workouts ?? []
+        ).filter(
+          (workout) => !deleted.has(`${ownerId}:workouts:${workout.id}`)
+        ),
+      })
+    }
+  )
 }
 export async function readCachedPlans(ownerId: string) {
-  return offlineDb.plans.get(ownerId)
+  const cache = await offlineDb.plans.get(ownerId)
+  if (!cache) return cache
+  const pending = await offlineDb.planEdits
+    .where("ownerId")
+    .equals(ownerId)
+    .toArray()
+  const workouts = new Map(cache.workouts.map((value) => [value.id, value]))
+  for (const entry of pending) workouts.set(entry.value.id, entry.value)
+  return { ...cache, workouts: [...workouts.values()] }
+}
+/** Replace one server scope without dropping other weeks or pending local plans. */
+export async function cacheWeekPlans(
+  ownerId: string,
+  weekId: string,
+  weeks: WeekRecord[],
+  workouts: WorkoutRecord[],
+  isCurrent: () => boolean = () => true,
+  baseline?: WorkoutRecord[]
+) {
+  await offlineDb.transaction(
+    "rw",
+    [offlineDb.plans, offlineDb.deleted],
+    async () => {
+      const current = await offlineDb.plans.get(ownerId)
+      const deleted = new Set(
+        (
+          await offlineDb.deleted.where("ownerId").equals(ownerId).toArray()
+        ).map((row) => row.key)
+      )
+      if (!isCurrent()) return
+      await offlineDb.plans.put({
+        key: ownerId,
+        ownerId,
+        weeks,
+        workouts: reconcilePlans(
+          current?.workouts ?? [],
+          workouts,
+          baseline ?? current?.workouts ?? [],
+          weekId
+        ).filter(
+          (workout) => !deleted.has(`${ownerId}:workouts:${workout.id}`)
+        ),
+      })
+    }
+  )
+}
+
+export async function cacheWorkout(ownerId: string, workout: WorkoutRecord) {
+  await offlineDb.transaction(
+    "rw",
+    [offlineDb.plans, offlineDb.deleted],
+    async () => {
+      if (await offlineDb.deleted.get(`${ownerId}:workouts:${workout.id}`))
+        return
+      const current = await offlineDb.plans.get(ownerId)
+      if (
+        !current ||
+        current.workouts.some(
+          (value) =>
+            value.id === workout.id && value.revision > workout.revision
+        )
+      )
+        return
+      await offlineDb.plans.put({
+        ...current,
+        workouts: [
+          ...current.workouts.filter((value) => value.id !== workout.id),
+          workout,
+        ],
+      })
+    }
+  )
+}
+
+/** Pending results always overlay an acknowledged server list. */
+export async function withPendingSessions(
+  ownerId: string,
+  sessions: SessionRecord[],
+  weekId?: string
+) {
+  const values = new Map(sessions.map((session) => [session.id, session]))
+  for (const entry of await offlineDb.pending
+    .where("ownerId")
+    .equals(ownerId)
+    .toArray()) {
+    if (weekId === undefined || entry.session.weekId === weekId)
+      values.set(entry.id, entry.session)
+  }
+  return [...values.values()]
 }
 export async function getWorkoutDraft(ownerId: string, workout: WorkoutRecord) {
+  if (await offlineDb.deleted.get(`${ownerId}:workouts:${workout.id}`))
+    throw new Error("This workout was deleted")
   const key = keyFor(ownerId, workout.id)
   return offlineDb.transaction(
     "rw",
     offlineDb.drafts,
     offlineDb.sessions,
+    offlineDb.planEdits,
     async () => {
       const existing = await offlineDb.drafts.get(key)
       if (existing) {
@@ -90,21 +275,57 @@ export async function getWorkoutDraft(ownerId: string, workout: WorkoutRecord) {
         )
         if (actual) return actual.session
       }
-      const session = workoutDraft(workout, existing?.session.id)
+      const pending = await offlineDb.planEdits.get(key)
+      const session = workoutDraft(
+        pending?.value ?? workout,
+        existing?.session.id
+      )
       await offlineDb.drafts.put({ key, ownerId, session })
       return session
     }
   )
 }
-export async function saveCorrection(ownerId: string, session: SessionRecord) {
+export async function archiveRecovery(
+  ownerId: string,
+  key: string,
+  value: unknown,
+  reason: string
+) {
+  const archiveKey = `${key}:${reason}`
+  if (!(await offlineDb.recoveries.get(archiveKey)))
+    await offlineDb.recoveries.put({ key: archiveKey, ownerId, value, reason })
+}
+export async function saveCorrection(
+  ownerId: string,
+  session: SessionRecord,
+  base?: SessionRecord
+) {
+  const key = keyFor(ownerId, session.id)
+  const existing = await offlineDb.corrections.get(key)
   await offlineDb.corrections.put({
-    key: keyFor(ownerId, session.id),
+    key,
     ownerId,
     session,
+    base: existing?.base ?? base,
   })
 }
-export async function readCorrection(ownerId: string, id: string) {
-  return (await offlineDb.corrections.get(keyFor(ownerId, id)))?.session
+export async function readCorrection(
+  ownerId: string,
+  id: string,
+  current?: SessionRecord
+) {
+  const row = await offlineDb.corrections.get(keyFor(ownerId, id))
+  if (!row || !current || row.session.revision === current.revision)
+    return row?.session
+  if (row.base) return mergeSession(row.base, row.session, current)
+  await archiveRecovery(
+    ownerId,
+    row.key,
+    row.session,
+    "Legacy correction has no baseline"
+  )
+  await offlineDb.corrections.delete(row.key)
+  return undefined
 }
 export async function clearCorrection(ownerId: string, id: string) {
   await offlineDb.corrections.delete(keyFor(ownerId, id))
@@ -115,6 +336,11 @@ export async function cachePrevious(
   itemId: string,
   value: PreviousRecord
 ) {
+  if (
+    value &&
+    (await offlineDb.deleted.get(`${ownerId}:sessions:${value.sessionId}`))
+  )
+    return
   await offlineDb.history.put({
     key: `${ownerId}:${sessionId}:${itemId}`,
     ownerId,
@@ -138,13 +364,18 @@ export async function cacheSession(ownerId: string, session: SessionRecord) {
     "rw",
     offlineDb.sessions,
     offlineDb.pending,
+    offlineDb.deleted,
     async () => {
+      if (await isDeleted(ownerId, session)) return
       if (await offlineDb.pending.get(key)) return
+      const current = await offlineDb.sessions.get(key)
+      if (current && current.serverRevision > session.revision) return
       await offlineDb.sessions.put({
         key,
         ownerId,
         session,
         serverRevision: session.revision,
+        base: session,
       })
     }
   )
@@ -171,28 +402,54 @@ export function subscribePending(
   })
   return () => subscription.unsubscribe()
 }
-export async function queueSession(ownerId: string, draft: SessionRecord) {
+export async function queueSession(
+  ownerId: string,
+  draft: SessionRecord,
+  previous?: SessionRecord,
+  delayMs = 0
+) {
   Session.parse(draft)
   const key = keyFor(ownerId, draft.id)
-  await offlineDb.transaction(
+  return offlineDb.transaction(
     "rw",
-    offlineDb.sessions,
-    offlineDb.pending,
+    [offlineDb.sessions, offlineDb.pending, offlineDb.deleted],
     async () => {
+      if (await isDeleted(ownerId, draft))
+        throw new Error("This workout was deleted")
       const cached = await offlineDb.sessions.get(key)
       const pending = await offlineDb.pending.get(key)
-      const serverRevision = cached?.serverRevision ?? draft.revision
-      const session = { ...draft, revision: serverRevision }
-      await offlineDb.sessions.put({ key, ownerId, session, serverRevision })
+      const current = pending?.session ?? cached?.session
+      const session =
+        previous && current ? mergeSession(previous, draft, current) : draft
+      const base = pending ? pending.base : (cached?.base ?? previous)
+      const serverRevision =
+        base?.revision ?? cached?.serverRevision ?? draft.revision
+      const value = { ...session, revision: serverRevision }
+      await offlineDb.sessions.put({
+        key,
+        ownerId,
+        session: value,
+        serverRevision,
+        base,
+      })
       await offlineDb.pending.put({
         ...pending,
         key,
         id: draft.id,
         ownerId,
-        session,
+        session: value,
+        base,
+        legacyBase:
+          pending && !base
+            ? (pending.legacyBase ?? previous ?? pending.session)
+            : undefined,
+        readyAt: Date.now() + delayMs,
         version: crypto.randomUUID(),
-        status: pending?.status === "conflict" ? "conflict" : "pending",
+        status: "pending",
+        message: undefined,
+        failure: undefined,
       })
+      return value
     }
   )
 }
@@ -220,135 +477,107 @@ export async function flushQueue(ownerId: string): Promise<FlushResult> {
 }
 async function flush(ownerId: string): Promise<FlushResult> {
   const summary: FlushResult = { synced: 0, conflicts: 0, authRequired: false }
-  // One pass per snapshot. New edits remain queued for the next explicit/online flush.
-  for (const entry of await listPending(ownerId)) {
-    if (entry.status === "conflict") {
-      summary.conflicts++
-      continue
-    }
-    const outgoing = await offlineDb.transaction(
-      "rw",
-      offlineDb.pending,
-      async () => {
-        const current = await offlineDb.pending.get(entry.key)
-        if (!current || current.status === "conflict") return null
-        current.request ??= {
-          key: crypto.randomUUID(),
-          version: current.version,
-          session: current.session,
-        }
-        await offlineDb.pending.put(current)
-        return current.request
-      }
-    )
-    if (!outgoing) continue
-    try {
-      const saved = await saveSession(outgoing.session, outgoing.key)
-      await offlineDb.transaction(
-        "rw",
-        offlineDb.pending,
-        offlineDb.sessions,
-        async () => {
-          const latest = await offlineDb.pending.get(entry.key)
-          if (!latest) return
-          if (latest.version === outgoing.version) {
-            await offlineDb.sessions.put({
-              key: entry.key,
+  for (const initial of await listPending(ownerId)) {
+    for (let pass = 0; pass < 20; pass++) {
+      const entry = await offlineDb.pending.get(initial.key)
+      if (!entry) break
+      if (!entry.request && (entry.readyAt ?? 0) > Date.now()) break
+      try {
+        const base = entry.base
+        const legacy = entry.request?.session
+        let request: SaveRequest<SessionRecord> = entry.request
+          ? { ...entry.request, value: entry.request.value ?? legacy! }
+          : {
+              key: crypto.randomUUID(),
+              version: entry.version,
+              value: entry.session,
+              local: entry.session,
+              base,
+            }
+        const result = await saveRebased(
+          request,
+          saveSession,
+          Session,
+          mergeSessionForSave,
+          async (next) => {
+            request = next
+            await offlineDb.pending.update(entry.key, { request: next })
+          },
+          async (local, current) => {
+            await archiveRecovery(
               ownerId,
-              session: saved,
-              serverRevision: saved.revision,
-            })
-            await offlineDb.pending.delete(entry.key)
-          } else {
-            const session = { ...latest.session, revision: saved.revision }
-            await offlineDb.sessions.put({
-              key: entry.key,
-              ownerId,
-              session,
-              serverRevision: saved.revision,
-            })
-            await offlineDb.pending.put({
-              ...latest,
-              session,
-              request: undefined,
-              status: "pending",
-              message: undefined,
-            })
+              entry.key,
+              local,
+              "Legacy result draft has no baseline"
+            )
+            return entry.legacyBase && request.version === entry.version
+              ? mergeSession(entry.legacyBase, local, current)
+              : current
           }
+        )
+        const saved = result.saved
+        const before = result.request.local ?? result.request.value
+        let present = false
+        await offlineDb.transaction(
+          "rw",
+          [offlineDb.pending, offlineDb.sessions],
+          async () => {
+            const latest = await offlineDb.pending.get(entry.key)
+            if (!latest) return
+            present = true
+            const value =
+              latest.version === result.request.version
+                ? saved
+                : mergeSession(before, latest.session, saved)
+            await offlineDb.sessions.put({
+              key: entry.key,
+              ownerId,
+              session: value,
+              base: saved,
+              serverRevision: saved.revision,
+            })
+            if (latest.version === result.request.version)
+              await offlineDb.pending.delete(entry.key)
+            else
+              await offlineDb.pending.put({
+                ...latest,
+                session: value,
+                base: saved,
+                legacyBase: undefined,
+                request: undefined,
+                status: "pending",
+                message: undefined,
+                failure: undefined,
+                server: undefined,
+              })
+          }
+        )
+        if (present)
+          publishSaved({ ownerId, kind: "sessions", before, after: saved })
+        summary.synced++
+      } catch (error) {
+        if (error instanceof ApiError && error.code === "record_deleted") {
+          await purgeWorkout(ownerId, {
+            workoutId: entry.session.workoutId,
+            sessionIds: [entry.id],
+          })
+          break
         }
-      )
-      summary.synced++
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        summary.authRequired = true
+        if (error instanceof ApiError && error.status === 401)
+          summary.authRequired = true
+        const failure = saveFailure(error)
+        await offlineDb.pending.update(entry.key, {
+          status: "error",
+          message: failure.message,
+          failure: failure.failure,
+          ...(failure.rejected ? { request: undefined } : {}),
+        })
         break
       }
-      const conflict = error instanceof ApiError && error.status === 409
-      const candidate =
-        error instanceof ApiError &&
-        typeof error.details === "object" &&
-        error.details !== null &&
-        "current" in error.details
-          ? Session.safeParse(error.details.current)
-          : null
-      await offlineDb.transaction("rw", offlineDb.pending, async () => {
-        const latest = await offlineDb.pending.get(entry.key)
-        if (!latest) return
-        await offlineDb.pending.put({
-          ...latest,
-          status: conflict ? "conflict" : "error",
-          message: error instanceof Error ? error.message : "Unable to sync",
-          server: candidate?.success ? candidate.data : undefined,
-        })
-      })
-      if (conflict) summary.conflicts++
-      else break
     }
+    if (summary.authRequired) break
   }
   return summary
-}
-export async function resolveConflict(
-  ownerId: string,
-  id: string,
-  choice: "local" | "server"
-) {
-  const key = keyFor(ownerId, id)
-  const current = await getSession(id)
-  await offlineDb.transaction(
-    "rw",
-    offlineDb.pending,
-    offlineDb.sessions,
-    async () => {
-      const row = await offlineDb.pending.get(key)
-      if (!row) return
-      if (choice === "server") {
-        await offlineDb.pending.delete(key)
-        await offlineDb.sessions.put({
-          key,
-          ownerId,
-          session: current,
-          serverRevision: current.revision,
-        })
-      } else {
-        const session = { ...row.session, revision: current.revision }
-        await offlineDb.pending.put({
-          ...row,
-          session,
-          version: crypto.randomUUID(),
-          request: undefined,
-          status: "pending",
-          server: undefined,
-          message: undefined,
-        })
-        await offlineDb.sessions.put({
-          key,
-          ownerId,
-          session,
-          serverRevision: current.revision,
-        })
-      }
-    }
-  )
 }
 export async function clearOwnerCache(ownerId: string) {
   await offlineDb.transaction(
@@ -360,8 +589,17 @@ export async function clearOwnerCache(ownerId: string) {
       offlineDb.plans,
       offlineDb.drafts,
       offlineDb.corrections,
+      offlineDb.editorDrafts,
+      offlineDb.planEdits,
     ],
     async () => {
+      if (
+        (await offlineDb.planEdits.where("ownerId").equals(ownerId).count()) ||
+        (await offlineDb.editorDrafts.where("ownerId").equals(ownerId).count())
+      )
+        throw new Error(
+          "Resolve your unfinished workout edits before clearing local data."
+        )
       if (await offlineDb.pending.where("ownerId").equals(ownerId).count())
         throw new Error(
           "Sync or explicitly resolve your unsaved sessions before clearing local data."
@@ -374,6 +612,104 @@ export async function clearOwnerCache(ownerId: string) {
       await offlineDb.history.where("ownerId").equals(ownerId).delete()
       await offlineDb.plans.where("ownerId").equals(ownerId).delete()
       await offlineDb.drafts.where("ownerId").equals(ownerId).delete()
+    }
+  )
+}
+
+async function isDeleted(ownerId: string, session: SessionRecord) {
+  return (
+    !!(await offlineDb.deleted.get(`${ownerId}:sessions:${session.id}`)) ||
+    !!(
+      session.workoutId &&
+      (await offlineDb.deleted.get(`${ownerId}:workouts:${session.workoutId}`))
+    )
+  )
+}
+export async function purgeWorkout(
+  ownerId: string,
+  deleted: { workoutId: string | null; sessionIds: string[] }
+) {
+  await offlineDb.transaction(
+    "rw",
+    [
+      offlineDb.sessions,
+      offlineDb.pending,
+      offlineDb.history,
+      offlineDb.plans,
+      offlineDb.drafts,
+      offlineDb.corrections,
+      offlineDb.editorDrafts,
+      offlineDb.planEdits,
+      offlineDb.deleted,
+      offlineDb.recoveries,
+    ],
+    async () => {
+      const ids = new Set(deleted.sessionIds)
+      for (const table of [
+        offlineDb.sessions,
+        offlineDb.pending,
+        offlineDb.drafts,
+        offlineDb.corrections,
+      ]) {
+        const rows = await table.where("ownerId").equals(ownerId).toArray()
+        for (const row of rows)
+          if (
+            ids.has(row.session.id) ||
+            (deleted.workoutId && row.session.workoutId === deleted.workoutId)
+          ) {
+            ids.add(row.session.id)
+            await table.delete(row.key)
+          }
+      }
+      for (const id of ids)
+        await offlineDb.deleted.put({
+          key: `${ownerId}:sessions:${id}`,
+          ownerId,
+        })
+      if (deleted.workoutId) {
+        await offlineDb.deleted.put({
+          key: `${ownerId}:workouts:${deleted.workoutId}`,
+          ownerId,
+        })
+        const plans = await offlineDb.plans.get(ownerId)
+        if (plans)
+          await offlineDb.plans.put({
+            ...plans,
+            workouts: plans.workouts.filter(
+              (workout) => workout.id !== deleted.workoutId
+            ),
+          })
+      }
+      for (const table of [offlineDb.editorDrafts, offlineDb.planEdits]) {
+        for (const row of await table
+          .where("ownerId")
+          .equals(ownerId)
+          .toArray())
+          if (
+            row.value.id === deleted.workoutId ||
+            ids.has(row.value.id) ||
+            [...ids].some((id) => row.key === `${ownerId}:session:${id}`)
+          )
+            await table.delete(row.key)
+      }
+      const archivedIds = [
+        ...ids,
+        ...(deleted.workoutId ? [deleted.workoutId] : []),
+      ]
+      for (const row of await offlineDb.recoveries
+        .where("ownerId")
+        .equals(ownerId)
+        .toArray())
+        if (
+          archivedIds.some(
+            (id) =>
+              row.key.startsWith(`${ownerId}:${id}:`) ||
+              row.key.startsWith(`${ownerId}:session:${id}:`)
+          )
+        )
+          await offlineDb.recoveries.delete(row.key)
+      // Previous-performance caches can reference any deleted session.
+      await offlineDb.history.where("ownerId").equals(ownerId).delete()
     }
   )
 }

@@ -1,19 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import {
-  Check,
-  MessageSquare,
-  MoreHorizontal,
-  RotateCcw,
-  SkipForward,
-  Trash2,
-  Settings2,
-  Undo2,
-} from "lucide-react"
+import { useState, type ReactNode } from "react"
+import { Check, MessageSquare, SkipForward } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { SwipeDeleteRow } from "./swipe-delete-row"
 import { Textarea } from "@/components/ui/textarea"
-import { ActionMenu } from "./responsive-panel"
+import { SetTypeMenu, setMark, setNumber } from "./set-type-menu"
 import type {
   LoadValue,
   SetResult,
@@ -75,8 +68,14 @@ export function EntryUnits({
     </div>
   )
 }
-export function defaultEntryLoad(item: WorkoutItem): LoadValue {
-  const target = item.sets.find((set) => set.load)?.load
+export function defaultEntryLoad(
+  item: WorkoutItem,
+  previous?: LoadValue | null
+): LoadValue {
+  const target =
+    item.sets.find((set) => set.load?.value != null)?.load ??
+    previous ??
+    item.sets.find((set) => set.load)?.load
   return target
     ? { ...target, value: null }
     : { value: null, unit: "lb", basis: "total" }
@@ -134,30 +133,54 @@ function previousLabel(set: SetResult) {
 export function SessionSetHeader({
   item,
   entryLoad,
+  onUnits,
 }: {
+  onUnits?: () => void
   item: WorkoutItem
   entryLoad: LoadValue
 }) {
   const fields = orderedFields(item)
   return (
-    <div className="session-set-header session-set-main" aria-hidden="true">
+    <div className="session-set-header session-set-main">
       <span>Set</span>
       <span>Previous</span>
       <div
         className="session-set-columns"
         style={{
-          gridTemplateColumns: `repeat(${Math.min(fields.length, 2)}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${fields.length}, minmax(0, 1fr))`,
         }}
       >
-        {fields.length <= 2 ? (
-          fields.map((field) => (
-            <span key={field}>{fieldLabel(field, entryLoad)}</span>
-          ))
-        ) : (
-          <span>Result</span>
+        {fields.map((field) =>
+          field === "load" && onUnits ? (
+            <button
+              key={field}
+              onClick={onUnits}
+              aria-label={`${item.name} weight units`}
+            >
+              {field === "load"
+                ? entryLoad.unit === "lb"
+                  ? "LBS"
+                  : entryLoad.unit === "kg"
+                    ? "KG"
+                    : "Weight"
+                : fieldLabel(field, entryLoad)}
+            </button>
+          ) : (
+            <span key={field}>
+              {field === "load"
+                ? entryLoad.unit === "lb"
+                  ? "LBS"
+                  : entryLoad.unit === "kg"
+                    ? "KG"
+                    : "Weight"
+                : fieldLabel(field, entryLoad)}
+            </span>
+          )
         )}
       </div>
-      <span />
+      <span aria-label="Completed">
+        <Check size={16} />
+      </span>
     </div>
   )
 }
@@ -175,7 +198,21 @@ export function SessionSetRow({
   onRemove,
   onUndo,
   onSkip,
+  suggestion,
+  onCheck,
+  onType,
+  detailsOpen = false,
+  detailsSelector,
+  onCloseDetails,
+  onTargetPatch,
 }: {
+  detailsSelector?: ReactNode
+  detailsOpen?: boolean
+  onCloseDetails?: () => void
+  onTargetPatch?: (patch: Partial<SetTarget>) => void
+  suggestion?: Partial<SetResult>
+  onCheck?: () => void
+  onType?: (kind: SetTarget["kind"]) => void
   item: WorkoutItem
   index: number
   target: SetTarget | null
@@ -189,8 +226,12 @@ export function SessionSetRow({
   onUndo: () => void
   onSkip: () => void
 }) {
-  const [noteOpen, setNoteOpen] = useState(false)
-  const [unitsOpen, setUnitsOpen] = useState(false)
+  const [localDetailsOpen, setLocalDetailsOpen] = useState(false)
+  const openDetails = detailsOpen || localDetailsOpen
+  const closeDetails = () => {
+    setLocalDetailsOpen(false)
+    onCloseDetails?.()
+  }
   const fields = orderedFields(item)
   const load = result?.load ?? entryLoad
   const prefix = `${item.name} set ${index + 1}`
@@ -204,159 +245,180 @@ export function SessionSetRow({
     isHistoricalCommentary(result?.notes ?? "")
   const note = separateNotes ? (result?.userNotes ?? "") : (result?.notes ?? "")
   return (
-    <div
-      id={`set-${target?.id ?? result?.id}`}
-      className={`session-set-row ${isComplete ? "set-is-complete" : isSkipped ? "set-is-skipped" : ""}`}
-      data-completion={result?.status ?? "unlogged"}
+    <SwipeDeleteRow
+      label={prefix}
+      onDelete={onRemove}
+      disabled={readOnly}
+      className="session-set-swipe"
     >
-      <div className="session-set-main">
-        <div className="session-set-identity">
-          <span className="set-index text-sm font-medium">
-            {target?.kind === "warmup" ? "W" : index + 1}
-          </span>
-          {isComplete && (
-            <Check
-              size={14}
-              className="text-primary"
-              aria-label="Set complete"
+      <div
+        id={`set-${target?.id ?? result?.id}`}
+        className={`session-set-row ${isComplete ? "set-is-complete" : isSkipped ? "set-is-skipped" : ""}`}
+        data-completion={result?.status ?? "unlogged"}
+      >
+        <div className="session-set-main">
+          {!readOnly ? (
+            <SetTypeMenu
+              label={`${prefix} type`}
+              kind={target?.kind ?? "working"}
+              number={
+                target
+                  ? setNumber(item.sets, index)
+                  : setNumber(item.sets, item.sets.length - 1) +
+                    index -
+                    item.sets.length +
+                    1
+              }
+              onChange={onType}
+              onRemove={onRemove}
             />
-          )}
-          {isSkipped && <SkipForward size={12} aria-label="Set skipped" />}
-        </div>
-        <div className="session-set-reference">
-          <span>{previous ? previousLabel(previous) : "—"}</span>
-          {showTarget && target && (
-            <small>Target: {prescriptionLabel(target)}</small>
-          )}
-        </div>
-        <div
-          className={`session-set-actual session-set-columns ${fields.length > 2 ? "multi-metric" : ""}`}
-          style={{
-            gridTemplateColumns: `repeat(${Math.min(fields.length, 2)}, minmax(0, 1fr))`,
-          }}
-        >
-          {fields.map((field) => (
-            <Field
-              key={field}
-              label={fieldLabel(field, load)}
-              className="session-actual-field !mb-0"
+          ) : (
+            <span
+              className={`set-type-trigger set-mark set-${target?.kind ?? "working"}`}
             >
-              <Numeric
-                readOnly={readOnly}
-                label={`${prefix} ${fieldAria(field)}`}
-                value={
-                  field === "load"
-                    ? (result?.load?.value ?? null)
-                    : (result?.[field] ?? null)
-                }
-                onChange={(value) =>
-                  onPatch(
+              {setMark(
+                target?.kind ?? "working",
+                target ? setNumber(item.sets, index) : index + 1
+              )}
+            </span>
+          )}
+          <div className="session-set-reference">
+            <span>{previous ? previousLabel(previous) : "—"}</span>
+            {showTarget && target && (
+              <small>Target: {prescriptionLabel(target)}</small>
+            )}
+          </div>
+          <div
+            className={`session-set-actual session-set-columns ${fields.length > 2 ? "multi-metric" : ""}`}
+            style={{
+              gridTemplateColumns: `repeat(${fields.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {fields.map((field) => (
+              <Field
+                key={field}
+                label={fieldLabel(field, load)}
+                className="session-actual-field !mb-0"
+              >
+                <Numeric
+                  readOnly={readOnly}
+                  placeholder={String(
+                    (field === "load"
+                      ? suggestion?.load?.value
+                      : suggestion?.[field]) ?? "—"
+                  )}
+                  label={`${prefix} ${fieldAria(field)}`}
+                  value={
                     field === "load"
-                      ? { load: { ...load, value } }
-                      : { [field]: value }
+                      ? (result?.load?.value ?? null)
+                      : (result?.[field] ?? null)
+                  }
+                  onChange={(value) =>
+                    onPatch(
+                      field === "load"
+                        ? { load: { ...load, value } }
+                        : { [field]: value }
+                    )
+                  }
+                />
+              </Field>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="set-check"
+            aria-label={`${prefix} ${isComplete ? "uncheck" : "complete"}`}
+            aria-pressed={isComplete}
+            disabled={readOnly}
+            onClick={onCheck}
+          >
+            {isSkipped ? (
+              <SkipForward size={17} />
+            ) : (
+              <Check size={20} strokeWidth={1.8} />
+            )}
+          </button>
+        </div>
+        {hasOverride && (
+          <button
+            type="button"
+            className="set-note-text"
+            disabled={readOnly}
+            onClick={() => setLocalDetailsOpen(true)}
+          >
+            Recorded in {load.unit} · {basisLabels[load.basis]}
+          </button>
+        )}
+        {note &&
+          (readOnly ? (
+            <p className="set-note-text">{note}</p>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocalDetailsOpen(true)}
+            >
+              <MessageSquare size={13} /> Set note
+            </Button>
+          ))}
+        {openDetails && !readOnly && (
+          <Modal title="Set Details" onClose={closeDetails}>
+            <p className="muted mb-4 text-sm">{prefix}</p>
+            {detailsSelector}
+            <Field label="RIR">
+              <Numeric
+                label={`${prefix} RIR`}
+                value={result?.rir ?? null}
+                onChange={(rir) => onPatch({ rir })}
+              />
+            </Field>
+            {target && onTargetPatch && (
+              <Field label="Tempo">
+                <Input
+                  aria-label={`${prefix} tempo`}
+                  value={target.tempo}
+                  onChange={(event) =>
+                    onTargetPatch({ tempo: event.target.value })
+                  }
+                />
+              </Field>
+            )}
+            {fields.includes("load") && (
+              <EntryUnits
+                prefix={prefix}
+                value={load}
+                onChange={(value) => onPatch({ load: value })}
+              />
+            )}
+            {target?.notes && <p className="set-note-text">{target.notes}</p>}
+            <Field label="Set note">
+              <Textarea
+                aria-label={`${prefix} note`}
+                placeholder="Optional"
+                value={note}
+                onChange={(event) =>
+                  onPatch(
+                    separateNotes
+                      ? { userNotes: event.target.value }
+                      : { notes: event.target.value }
                   )
                 }
               />
             </Field>
-          ))}
-        </div>
-        {!readOnly ? (
-          <ActionMenu
-            label={`${prefix} actions`}
-            trigger={<MoreHorizontal size={17} />}
-            actions={[
-              {
-                label: note ? "Edit note" : "Add note",
-                icon: MessageSquare,
-                onSelect: () => setNoteOpen(true),
-              },
-              ...(fields.includes("load")
-                ? [
-                    {
-                      label: "Set-specific units",
-                      icon: Settings2,
-                      onSelect: () => setUnitsOpen(true),
-                    },
-                  ]
-                : []),
-              {
-                label: isSkipped ? "Undo skip" : "Skip set",
-                icon: isSkipped ? Undo2 : SkipForward,
-                onSelect: onSkip,
-              },
-              ...(hasEnteredResult(result)
-                ? [{ label: "Clear entry", icon: RotateCcw, onSelect: onUndo }]
-                : []),
-              {
-                label: "Remove set",
-                icon: Trash2,
-                destructive: true,
-                separator: true,
-                onSelect: onRemove,
-              },
-            ]}
-          />
-        ) : (
-          <span />
+            <div className="dialog-footer">
+              <Button variant="outline" onClick={onSkip}>
+                {isSkipped ? "Undo skip" : "Skip set"}
+              </Button>
+              {hasEnteredResult(result) && (
+                <Button variant="outline" onClick={onUndo}>
+                  Clear entry
+                </Button>
+              )}
+              <Button onClick={closeDetails}>Done</Button>
+            </div>
+          </Modal>
         )}
       </div>
-      {hasOverride && !unitsOpen && (
-        <button
-          type="button"
-          className="mt-2 text-xs text-muted-foreground underline underline-offset-2"
-          disabled={readOnly}
-          onClick={() => setUnitsOpen(true)}
-        >
-          Recorded in{" "}
-          {load.unit === "unknown" ? "unspecified units" : load.unit} ·{" "}
-          {basisLabels[load.basis]}
-        </button>
-      )}
-      {unitsOpen && !readOnly && (
-        <Modal title={`${prefix} units`} onClose={() => setUnitsOpen(false)}>
-          <p className="mb-2 text-xs text-muted-foreground">
-            Units for this set. Changing the label does not convert its weight.
-          </p>
-          <EntryUnits
-            prefix={prefix}
-            value={load}
-            onChange={(value) => onPatch({ load: value })}
-          />
-        </Modal>
-      )}
-      {readOnly && note && <p className="set-note-text">{note}</p>}
-      {!readOnly && note && !noteOpen && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-1"
-          onClick={() => setNoteOpen(true)}
-        >
-          <MessageSquare size={13} />
-          Set note
-        </Button>
-      )}
-      {noteOpen && !readOnly && (
-        <Modal title={`${prefix} note`} onClose={() => setNoteOpen(false)}>
-          <Field label={`Set ${index + 1} note`}>
-            <Textarea
-              autoFocus
-              placeholder="Optional note…"
-              value={note}
-              onChange={(event) =>
-                onPatch(
-                  separateNotes
-                    ? { userNotes: event.target.value }
-                    : { notes: event.target.value }
-                )
-              }
-            />
-          </Field>
-          <Button variant="ghost" size="sm" onClick={() => setNoteOpen(false)}>
-            Close note
-          </Button>
-        </Modal>
-      )}
-    </div>
+    </SwipeDeleteRow>
   )
 }

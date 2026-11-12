@@ -148,7 +148,10 @@ test("mobile workout: plan edit, actuals, offline save, conflict and reload", as
   await page
     .getByLabel("Barbell Bench Press set 1 min reps", { exact: true })
     .fill("9")
-  await page.getByRole("button", { name: "Save workout", exact: true }).click()
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Back", exact: true })
+    .click()
   await expect(page.getByRole("dialog")).toHaveCount(0)
   await expect(
     page.getByRole("heading", { name: "Upper strength", exact: true })
@@ -163,6 +166,12 @@ test("mobile workout: plan edit, actuals, offline save, conflict and reload", as
   await expect(
     page.getByLabel("Barbell Bench Press set 1 status", { exact: true })
   ).toHaveCount(0)
+  await page
+    .getByRole("button", {
+      name: "Barbell Bench Press set 1 complete",
+      exact: true,
+    })
+    .click()
   await expect(
     reps.locator("xpath=ancestor::*[@data-completion]")
   ).toHaveAttribute("data-completion", "completed")
@@ -201,7 +210,9 @@ test("mobile workout: plan edit, actuals, offline save, conflict and reload", as
     .getByRole("textbox", { name: "Session notes", exact: true })
     .fill("Offline work preserved")
   await page.getByRole("button", { name: "Close", exact: true }).click()
-  await expect(page.getByText(/Offline.*sync pending/).first()).toBeVisible()
+  await expect(
+    page.getByRole("status", { name: "Autosave: Offline" }).first()
+  ).toBeVisible()
   if (process.env.TEST_OFFLINE_RELOAD === "1") {
     await page.reload()
     await expect(
@@ -218,17 +229,27 @@ test("mobile workout: plan edit, actuals, offline save, conflict and reload", as
   })
   expect(external.ok(), await external.text()).toBe(true)
   await context.setOffline(false)
+  await page.getByRole("button", { name: "Back", exact: true }).click()
   await page
     .getByRole("navigation", { name: "Mobile navigation" })
     .getByRole("button", { name: "Profile", exact: true })
     .click()
   await expect(
     page.getByRole("button", { name: "Keep device version" })
-  ).toBeVisible({ timeout: 15000 })
-  await page.getByRole("button", { name: "Keep device version" }).click()
+  ).toHaveCount(0)
+  await expect
+    .poll(
+      async () =>
+        (
+          await (
+            await context.request.get(`/api/v1/sessions/${session.id}`)
+          ).json()
+        ).notes
+    )
+    .toBe("Offline work preserved")
   await expect(
-    page.getByText("Everything on this device is synced.")
-  ).toBeVisible()
+    page.getByRole("status", { name: "Autosave: Saved" }).first()
+  ).toHaveCount(0)
   const saved = (await (
     await context.request.get(`/api/v1/sessions/${session.id}`)
   ).json()) as SessionRecord
@@ -248,6 +269,7 @@ test("mobile workout: plan edit, actuals, offline save, conflict and reload", as
   await expect(
     page.getByLabel("Barbell Bench Press set 1 actual reps", { exact: true })
   ).toHaveValue("10")
+  await page.getByRole("button", { name: "Back", exact: true }).click()
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page
     .getByRole("navigation", { name: "Main navigation" })

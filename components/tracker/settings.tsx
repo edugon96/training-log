@@ -3,16 +3,10 @@
 import { confirmAction } from "./responsive-panel"
 
 import { useEffect, useState } from "react"
-import { Download, KeyRound, Plus, RefreshCw, Upload } from "lucide-react"
+import { Download, KeyRound, Plus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api, updateProfileName } from "@/lib/api-client"
-import {
-  flushQueue,
-  listPending,
-  resolveConflict,
-  subscribePending,
-} from "@/lib/offline"
 import { ImportManifest } from "@/contracts/models"
 import { Empty, Field, errorMessage } from "./shared"
 import { TimerSettingsEditor } from "./timers"
@@ -20,7 +14,6 @@ import { DisplaySettings } from "./display-settings"
 
 type Keys = Awaited<ReturnType<typeof api.listKeys>>
 type Changes = Awaited<ReturnType<typeof api.changes>>
-type Pending = Awaited<ReturnType<typeof listPending>>
 const scopes = [
   "read",
   "plans:write",
@@ -77,8 +70,6 @@ export function Settings({
     }
   }
   const [changes, setChanges] = useState<Changes>([])
-  const [pending, setPending] = useState<Pending>([])
-  const [pendingLoaded, setPendingLoaded] = useState(false)
   const [name, setName] = useState("")
   const [selectedScopes, setSelectedScopes] = useState<
     Array<(typeof scopes)[number]>
@@ -88,9 +79,6 @@ export function Settings({
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   async function refresh() {
-    const p = await listPending(ownerId)
-    setPending(p)
-    setPendingLoaded(true)
     if (!navigator.onLine) return
     const [k, c] = await Promise.all([api.listKeys(), api.changes()])
     setKeys(k)
@@ -98,18 +86,6 @@ export function Settings({
   }
   useEffect(() => {
     let live = true
-    const unsubscribe = subscribePending(
-      ownerId,
-      (p) => {
-        if (live) {
-          setPending(p)
-          setPendingLoaded(true)
-        }
-      },
-      (e) => {
-        if (live) setError(errorMessage(e))
-      }
-    )
     if (navigator.onLine)
       void Promise.all([api.listKeys(), api.changes()])
         .then(([k, c]) => {
@@ -123,7 +99,6 @@ export function Settings({
         })
     return () => {
       live = false
-      unsubscribe()
     }
   }, [ownerId])
   async function act(fn: () => Promise<void>) {
@@ -208,97 +183,6 @@ export function Settings({
           <h2>Timers</h2>
         </div>
         <TimerSettingsEditor />
-      </section>
-      <section className="panel">
-        <div className="section-heading">
-          <div>
-            <h2>Device sync</h2>
-            <p>
-              {!pendingLoaded
-                ? "Checking this device…"
-                : pending.length
-                  ? `${pending.length} changes waiting`
-                  : "Everything on this device is synced."}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() =>
-              act(async () => {
-                const result = await flushQueue(ownerId)
-                await refresh()
-                setMessage(
-                  result.authRequired
-                    ? "Please sign in again to sync."
-                    : `${result.synced} changes synced. ${result.conflicts} conflicts.`
-                )
-              })
-            }
-          >
-            <RefreshCw size={15} /> Sync now
-          </Button>
-        </div>
-        {pending.map((entry) => (
-          <div className="sync-entry" key={entry.id}>
-            <div>
-              <strong>{entry.session.title}</strong>
-              <p>
-                {entry.status} {entry.message ? `· ${entry.message}` : ""}
-              </p>
-            </div>
-            {entry.status === "conflict" && (
-              <>
-                <details>
-                  <summary>Compare versions</summary>
-                  <div className="conflict-grid">
-                    <div>
-                      <h3>This device</h3>
-                      <pre>
-                        {JSON.stringify(
-                          {
-                            notes: entry.session.notes,
-                            results: entry.session.results,
-                          },
-                          null,
-                          2
-                        )}
-                      </pre>
-                    </div>
-                    <div>
-                      <h3>Server</h3>
-                      <pre>{JSON.stringify(entry.server, null, 2)}</pre>
-                    </div>
-                  </div>
-                </details>
-                <div className="row">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      act(async () => {
-                        await resolveConflict(ownerId, entry.id, "server")
-                        await refresh()
-                      })
-                    }
-                  >
-                    Use server version
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      act(async () => {
-                        await resolveConflict(ownerId, entry.id, "local")
-                        await flushQueue(ownerId)
-                        await refresh()
-                      })
-                    }
-                  >
-                    Keep device version
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
       </section>
       <section className="panel">
         <div className="section-heading">

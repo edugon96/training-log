@@ -13,6 +13,8 @@
 
 # next.js
 /.next/
+/app/.well-known/workflow/
+/test-results*/
 /out/
 
 # production
@@ -52,3 +54,4 @@ next-env.d.ts
 *.sql.gz
 *.har
 *.log
+/.swc

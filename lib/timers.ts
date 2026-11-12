@@ -77,6 +77,14 @@ type WorkoutTime = Pick<
   SessionRecord,
   "startedAt" | "finishedAt" | "status" | "timerPausedAt" | "pausedDurationMs"
 >
+export function workoutTimerRunning(session: WorkoutTime) {
+  return (
+    session.status === "active" &&
+    !!session.startedAt &&
+    !session.finishedAt &&
+    !session.timerPausedAt
+  )
+}
 export function elapsedMilliseconds(
   session: WorkoutTime,
   now: number
@@ -132,10 +140,68 @@ export function changeWorkoutTimer(
         }
   if (!session.startedAt) return session
   if (action === "pause")
-    return session.timerPausedAt
+    return session.timerPausedAt || session.finishedAt
       ? session
       : { ...session, timerPausedAt: new Date(now).toISOString() }
+  if (session.finishedAt)
+    return {
+      ...session,
+      finishedAt: null,
+      timerPausedAt: null,
+      pausedDurationMs:
+        (session.pausedDurationMs ?? 0) +
+        Math.max(0, now - Date.parse(session.finishedAt)),
+    }
   return { ...session, ...settleWorkoutPause(session, now) }
+}
+
+export function editWorkoutTime(
+  session: WorkoutTime,
+  value: Pick<WorkoutTime, "startedAt" | "finishedAt">,
+  now: number
+): WorkoutTime {
+  if (
+    [value.startedAt, value.finishedAt].some(
+      (time) => time !== null && !Number.isFinite(Date.parse(time))
+    )
+  )
+    throw new Error("Enter a valid date and time.")
+  if (
+    value.startedAt &&
+    value.finishedAt &&
+    Date.parse(value.finishedAt) < Date.parse(value.startedAt)
+  )
+    throw new Error("End time must follow start time.")
+  if (
+    value.startedAt === session.startedAt &&
+    value.finishedAt === session.finishedAt
+  )
+    return session
+  // Clearing only an active end time is the same as Resume, including its gap.
+  if (
+    session.status === "active" &&
+    session.startedAt &&
+    session.finishedAt &&
+    !value.finishedAt &&
+    value.startedAt === session.startedAt
+  )
+    return changeWorkoutTimer(session, "resume", now)
+  return { ...session, ...value, timerPausedAt: null, pausedDurationMs: 0 }
+}
+
+export function finishWorkoutTime(
+  session: WorkoutTime,
+  now: number
+): WorkoutTime {
+  if (session.status === "completed") return session
+  return {
+    ...session,
+    status: "completed",
+    finishedAt:
+      session.finishedAt ??
+      (session.startedAt ? new Date(now).toISOString() : null),
+    ...settleWorkoutPause(session, now),
+  }
 }
 export function clockLabel(
   milliseconds: number,

@@ -12,8 +12,6 @@ import { Pause, Play, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { clockLabel } from "@/lib/timers"
 
-const ticks = Array.from({ length: 120 }, (_, index) => index)
-
 export function TimerFace({
   milliseconds,
   mode,
@@ -35,26 +33,36 @@ export function TimerFace({
 }) {
   const time = milliseconds ?? 0
   const statusId = useId()
-  const progress = Math.min(1, Math.max(0, time / totalMs))
-  const display =
-    milliseconds === null
-      ? "—"
-      : clockLabel(time, mode === "rest" ? "down" : "up")
+  // Use the same whole second for the digits and dial. Common rests have one
+  // mark per second. Longer durations use whole-second intervals to stay legible.
+  const seconds = Math.max(
+    0,
+    mode === "rest" ? Math.ceil(time / 1000) : Math.floor(time / 1000)
+  )
+  const totalSeconds =
+    mode === "rest" ? Math.max(1, Math.ceil(totalMs / 1000)) : 60
+  const secondsPerTick = Math.max(1, Math.ceil(totalSeconds / 180))
+  const ticks = Array.from(
+    { length: Math.ceil(totalSeconds / secondsPerTick) },
+    (_, index) => index * secondsPerTick
+  )
+  const majorInterval = (totalSeconds <= 60 ? 5 : 10) * secondsPerTick
+  const display = milliseconds === null ? "—" : clockLabel(seconds * 1000)
   return (
     <div
       className={`timer-face ${active ? "is-active" : ""} ${paused ? "is-paused" : ""} ${complete ? "is-complete" : ""}`}
     >
       <svg className="timer-dial" viewBox="0 0 320 320" aria-hidden="true">
         <circle className="timer-bezel" cx="160" cy="160" r="157" />
-        {ticks.map((index) => (
+        {ticks.map((second) => (
           <line
-            key={index}
+            key={second}
             x1="160"
             y1="15"
             x2="160"
-            y2={index % 10 === 0 ? "33" : "25"}
-            transform={`rotate(${index * 3} 160 160)`}
-            className={`timer-tick ${index % 10 === 0 ? "is-major" : ""} ${mode === "rest" && index / 120 < progress ? "is-lit" : ""}`}
+            y2={second % majorInterval === 0 ? "33" : "25"}
+            transform={`rotate(${(second / totalSeconds) * 360} 160 160)`}
+            className={`timer-tick ${second % majorInterval === 0 ? "is-major" : ""} ${mode === "rest" && second < seconds ? "is-lit" : ""}`}
           />
         ))}
       </svg>
@@ -63,7 +71,7 @@ export function TimerFace({
           className="timer-sweep"
           style={
             {
-              "--sweep": `${((time % 60000) / 60000) * 360}deg`,
+              "--sweep": `${(seconds % 60) * 6}deg`,
             } as CSSProperties
           }
           aria-hidden="true"
@@ -167,9 +175,10 @@ export function DurationRuler({
     (seconds: number) => {
       const bounded = Math.max(1, Math.min(3600, seconds))
       const snapped = Math.round(bounded)
+      const previous = Math.round(position.current)
       position.current = bounded
       setFraction(bounded - snapped)
-      onChange(snapped)
+      if (snapped !== previous) onChange(snapped)
     },
     [onChange]
   )

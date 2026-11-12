@@ -116,7 +116,9 @@ test("mobile Back, Forward and reload restore screens, selected week and offline
   await expect(page).toHaveURL(/tab=profile/)
   await page.goBack()
   await expect(page).toHaveURL(/tab=library/)
-  await expect(page.locator(".breadcrumb")).toContainText("Library")
+  await expect(
+    page.getByRole("heading", { name: "Movements & equipment", exact: true })
+  ).toBeVisible()
   await page.goBack()
   await expect(
     page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ })
@@ -157,8 +159,14 @@ test("mobile Back, Forward and reload restore screens, selected week and offline
           ?.results[0]?.reps
     )
     .toBe(11)
+  await page.getByRole("button", { name: "Back", exact: true }).click()
   await nav.getByRole("button", { name: "Profile", exact: true }).click()
   await page.goBack()
+  await page
+    .getByRole("button", { name: "Open Navigation workout", exact: true })
+    .click()
+  await expect(page).toHaveURL(/session=/)
+  await page.goto(workoutUrl)
   await expect(page).toHaveURL(workoutUrl)
   await expect(
     page.getByLabel("Navigation Push-up set 1 actual reps", { exact: true })

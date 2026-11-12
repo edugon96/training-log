@@ -1,9 +1,16 @@
 "use client"
 
-import { confirmAction } from "./responsive-panel"
-
-import { useState } from "react"
-import { Plus, Save } from "lucide-react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import {
+  ArrowLeft,
+  ArrowUp,
+  Plus,
+  Settings2,
+  Trash2,
+  RefreshCw,
+  FolderInput,
+} from "lucide-react"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,44 +20,144 @@ import {
   muscleLabels,
   muscleNames,
   type ExerciseRecord,
-  type LoadValue,
+  type EquipmentRecord,
   type SetTarget,
   type WorkoutBlock,
   type WorkoutItem,
   type WorkoutRecord,
 } from "@/contracts/models"
 import { trackingFields } from "@/contracts/training"
-import { cleanBlockTitle, isHistoricalCommentary } from "@/lib/presentation"
-import {
-  Field,
-  Modal,
-  MoveButtons,
-  NativeSelect,
-  Numeric,
-  OptionalNote,
-  errorMessage,
-  move,
-} from "./shared"
+import { newGroup, moveMovement, movementRest } from "@/lib/workout-groups"
+import { WorkoutGroup, MoveToGroup } from "./workout-group"
+import { useWorkoutAutosave } from "./use-workout-autosave"
+import { AutosaveStatus } from "./autosave"
+import { confirmAction } from "./responsive-panel"
+import { Field, Modal, NativeSelect, Numeric } from "./shared"
 import { defaultEntryLoad, EntryUnits } from "./session-set-row"
 import {
   TrackingFieldsPicker,
   WorkoutExercisePicker,
 } from "./workout-exercise-picker"
+import { SetTypeMenu, setNumber } from "./set-type-menu"
+import { MovementCard } from "./movement-card"
+import { MovementRestPanel, RepetitionOptions } from "./movement-controls"
+import { MovementReorderPanel } from "./movement-reorder-panel"
+import { SwipeDeleteRow } from "./swipe-delete-row"
+import { creationNotes, changeCreationNotes } from "@/lib/movement-notes"
 
+type Selection = { blockId: string; itemId?: string; replace?: boolean }
 export function WorkoutEditor({
   workout,
   exercises,
+  equipment,
   onSave,
   onClose,
+  ownerId,
+  draftKey,
+  onBeforeChange,
+  sessionId,
+  creation = workout.revision === 0,
 }: {
   workout: WorkoutRecord
   exercises: ExerciseRecord[]
-  onSave: (workout: WorkoutRecord) => Promise<void>
+  equipment: EquipmentRecord[]
+  onSave: (
+    workout: WorkoutRecord,
+    base: WorkoutRecord
+  ) => Promise<WorkoutRecord>
   onClose: () => void
+  ownerId: string
+  draftKey: string
+  onBeforeChange?: (workout: WorkoutRecord) => Promise<boolean>
+  sessionId?: string
+  creation?: boolean
 }) {
-  const [draft, setDraft] = useState(workout)
+  const { draft, setDraft, ready, submitted, error, flush, discard } =
+    useWorkoutAutosave({
+      ownerId,
+      draftKey,
+      workout,
+      onSave,
+      onBeforeChange,
+      sessionId,
+      manual: creation,
+    })
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+  const [viewport, setViewport] = useState<{
+    height: number
+    top: number
+  } | null>(null)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const resize = () =>
+      setViewport({ height: viewport.height, top: viewport.offsetTop })
+    resize()
+    viewport.addEventListener("resize", resize)
+    viewport.addEventListener("scroll", resize)
+    return () => {
+      viewport.removeEventListener("resize", resize)
+      viewport.removeEventListener("scroll", resize)
+    }
+  }, [])
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState("")
+  const [picker, setPicker] = useState<Selection | null>(null)
+  const editorBody = useRef<HTMLDivElement>(null)
+  const pickerReturn = useRef<{
+    top: number
+    focus: HTMLElement | null
+  } | null>(null)
+  function openPicker(selection: Selection) {
+    pickerReturn.current = {
+      top: editorBody.current?.scrollTop ?? 0,
+      focus:
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null,
+    }
+    setNewGroupId(null)
+    setPicker(selection)
+  }
+  useLayoutEffect(() => {
+    if (!picker && pickerReturn.current && editorBody.current) {
+      const position = pickerReturn.current
+      editorBody.current.scrollTop = position.top
+      position.focus?.focus({ preventScroll: true })
+      pickerReturn.current = null
+    }
+  }, [picker])
+  const [settings, setSettings] = useState<Selection | null>(null)
+  const [setOptions, setSetOptions] = useState<
+    (Selection & { targetId: string }) | null
+  >(null)
+  const [restSelection, setRestSelection] = useState<Selection | null>(null)
+  const [unitsSelection, setUnitsSelection] = useState<Selection | null>(null)
+  const [repsSelection, setRepsSelection] = useState<Selection | null>(null)
+  const [reordering, setReordering] = useState(false)
+  const [movingItem, setMovingItem] = useState<string | null>(null)
+  const [newGroupId, setNewGroupId] = useState<string | null>(null)
+  function addGroup() {
+    const group = newGroup(draft.blocks)
+    setDraft((current) => ({ ...current, blocks: [...current.blocks, group] }))
+    setNewGroupId(group.id)
+  }
+  async function removeGroup(block: WorkoutBlock) {
+    if (
+      block.items.length &&
+      !(await confirmAction(`Remove ${block.title} and all its movements?`))
+    )
+      return
+    setDraft((current) => ({
+      ...current,
+      blocks: current.blocks.filter((value) => value.id !== block.id),
+    }))
+  }
   const patchBlock = (id: string, change: Partial<WorkoutBlock>) =>
     setDraft((current) => ({
       ...current,
@@ -78,547 +185,793 @@ export function WorkoutEditor({
     }))
   const patchSet = (
     blockId: string,
-    itemId: string,
+    item: WorkoutItem,
     id: string,
     change: Partial<SetTarget>
   ) =>
-    setDraft((current) => ({
-      ...current,
-      blocks: current.blocks.map((block) =>
-        block.id === blockId
-          ? {
-              ...block,
-              items: block.items.map((item) =>
-                item.id === itemId
-                  ? {
-                      ...item,
-                      sets: item.sets.map((target) =>
-                        target.id === id ? { ...target, ...change } : target
-                      ),
-                    }
-                  : item
-              ),
-            }
-          : block
+    patchItem(blockId, item.id, {
+      sets: item.sets.map((set) =>
+        set.id === id ? { ...set, ...change } : set
       ),
-    }))
-  function changeUnits(
-    block: WorkoutBlock,
-    item: WorkoutItem,
-    load: LoadValue
-  ) {
-    patchItem(block.id, item.id, {
-      sets: item.sets.map((set) => ({
-        ...set,
-        load: { ...load, value: set.load?.value ?? null },
-      })),
     })
+  async function close() {
+    if (busy) return
+    if (picker) {
+      setPicker(null)
+      return
+    }
+    if (creation && !submitted) {
+      if (
+        (draft.title ||
+          draft.notes ||
+          draft.date !== workout.date ||
+          draft.blocks.length > 1 ||
+          draft.blocks.some(
+            (block) =>
+              block.items.length || block.notes || block.title !== "Group 1"
+          )) &&
+        !(await confirmAction("Discard this unsaved workout?"))
+      )
+        return
+      await discard()
+    } else if (!creation) await flush()
+    if (mounted.current) onClose()
   }
   async function save() {
+    if (busy) return
     setBusy(true)
-    setError("")
     try {
-      await onSave(draft)
-      onClose()
-    } catch (exception) {
-      setError(errorMessage(exception))
+      if ((await flush()) && mounted.current) onClose()
     } finally {
-      setBusy(false)
+      if (mounted.current) setBusy(false)
     }
   }
+  function addExercises(selected: ExerciseRecord[]) {
+    const items = selected.map((exercise) => ({
+      ...makeItem(exercise, 1),
+      restSeconds: null,
+      automaticRest: false,
+      notes: exercise.notes,
+      trackingFields: trackingFields(
+        exercise,
+        equipment.find((value) => value.id === exercise.equipmentId)
+      ),
+    }))
+    if (picker) {
+      const block = draft.blocks.find((value) => value.id === picker.blockId)
+      if (block)
+        patchBlock(block.id, {
+          items: picker.replace
+            ? block.items.flatMap((item) =>
+                item.id === picker.itemId ? items.slice(0, 1) : [item]
+              )
+            : [...block.items, ...items],
+        })
+    }
+    setPicker(null)
+  }
+  const settingsBlock = draft.blocks.find(
+    (block) => block.id === settings?.blockId
+  )
+  const settingsItem = settingsBlock?.items.find(
+    (item) => item.id === settings?.itemId
+  )
+  const optionBlock = draft.blocks.find(
+    (block) => block.id === setOptions?.blockId
+  )
+  const optionItem = optionBlock?.items.find(
+    (item) => item.id === setOptions?.itemId
+  )
+  const optionTarget = optionItem?.sets.find(
+    (set) => set.id === setOptions?.targetId
+  )
   return (
-    <Modal
-      title={workout.revision ? "Edit workout" : "Build a workout"}
-      description="Arrange movements and set targets."
-      dirty={JSON.stringify(draft) !== JSON.stringify(workout)}
-      onClose={onClose}
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) void close()
+      }}
     >
-      <div className="form-grid">
-        <Field label="Workout">
-          <Input
-            value={draft.title}
-            onChange={(event) =>
-              setDraft({ ...draft, title: event.target.value })
-            }
-          />
-        </Field>
-        <Field label="Focus">
-          <Input
-            value={draft.focus}
-            onChange={(event) =>
-              setDraft({ ...draft, focus: event.target.value })
-            }
-          />
-        </Field>
-        {draft.kind === "planned" && (
-          <Field label="Date">
-            <Input
-              type="date"
-              value={draft.date ?? ""}
-              onChange={(event) =>
-                setDraft({ ...draft, date: event.target.value || null })
-              }
-            />
-          </Field>
-        )}
-      </div>
-      <div className="stack">
-        {draft.blocks.map((block, blockIndex) => (
-          <section className="editor-block" key={block.id}>
-            <div className="row spread">
-              <span className="eyebrow">
-                Block {String.fromCharCode(65 + blockIndex)}
-              </span>
-              <MoveButtons
-                label={`block ${blockIndex + 1}`}
-                index={blockIndex}
-                length={draft.blocks.length}
-                onMove={(direction) =>
-                  setDraft((current) => ({
-                    ...current,
-                    blocks: move(current.blocks, blockIndex, direction),
-                  }))
-                }
-                onRemove={() =>
-                  setDraft((current) => ({
-                    ...current,
-                    blocks: current.blocks.filter(
-                      (entry) => entry.id !== block.id
-                    ),
-                  }))
-                }
-              />
-            </div>
-            <div className="form-grid">
-              <Field label="Block title">
-                <Input
-                  value={cleanBlockTitle(block.title)}
-                  onChange={(event) =>
-                    patchBlock(block.id, { title: event.target.value })
-                  }
+      <DialogContent
+        className="focused-editor"
+        style={
+          viewport ? { height: viewport.height, top: viewport.top } : undefined
+        }
+        showCloseButton={false}
+        aria-describedby={undefined}
+        onInteractOutside={(event) => event.preventDefault()}
+      >
+        <header className="workout-toolbar">
+          <Button variant="ghost" disabled={busy} onClick={() => void close()}>
+            <ArrowLeft size={17} />
+            {picker
+              ? "Back"
+              : creation
+                ? submitted
+                  ? "Close"
+                  : "Cancel"
+                : "Back"}
+          </Button>
+          <DialogTitle>
+            {picker
+              ? picker.replace
+                ? "Replace movement"
+                : `Add to ${draft.blocks.find((block) => block.id === picker.blockId)?.title ?? "group"}`
+              : creation
+                ? `New ${draft.kind === "routine" ? "routine" : "workout"}`
+                : "Edit workout"}
+          </DialogTitle>
+          {!picker && (
+            <div className="workout-toolbar-actions">
+              {!creation && (
+                <AutosaveStatus
+                  ownerId={ownerId}
+                  id={sessionId ?? workout.id}
                 />
-              </Field>
-              <Field label="Grouping">
-                <NativeSelect
-                  label="Block grouping"
-                  value={block.kind}
-                  onChange={(kind) =>
-                    patchBlock(block.id, { kind: kind as WorkoutBlock["kind"] })
-                  }
-                >
-                  <option value="straight">Straight sets</option>
-                  <option value="superset">Superset</option>
-                  <option value="circuit">Circuit</option>
-                </NativeSelect>
-              </Field>
-              <Field label="Rest (seconds)">
-                <Numeric
-                  label="Rest seconds"
-                  value={block.restSeconds}
-                  onChange={(restSeconds) =>
-                    patchBlock(block.id, { restSeconds })
-                  }
-                />
-              </Field>
-              {block.kind === "circuit" && (
-                <Field label="Rounds">
-                  <Numeric
-                    label="Rounds"
-                    value={block.rounds}
-                    onChange={(rounds) => patchBlock(block.id, { rounds })}
-                  />
-                </Field>
               )}
+              <Button disabled={!ready || busy} onClick={() => void save()}>
+                {busy ? "Saving…" : creation ? "Save" : "Done"}
+              </Button>
             </div>
-            {block.items.map((item, itemIndex) => {
-              const fields = trackingFields(item)
-              const load = defaultEntryLoad(item)
-              return (
-                <details className="editor-item" open key={item.id}>
-                  <summary>
-                    <span>
-                      {String.fromCharCode(65 + blockIndex)}
-                      {itemIndex + 1} · {item.name}
-                    </span>
-                  </summary>
-                  <div className="row spread">
-                    <span className="muted">
-                      {item.equipment || "Bodyweight"}
-                    </span>
-                    <MoveButtons
-                      label={item.name}
-                      index={itemIndex}
-                      length={block.items.length}
-                      onMove={(direction) =>
-                        patchBlock(block.id, {
-                          items: move(block.items, itemIndex, direction),
-                        })
-                      }
-                      onRemove={() =>
-                        patchBlock(block.id, {
-                          items: block.items.filter(
-                            (entry) => entry.id !== item.id
-                          ),
-                        })
+          )}
+        </header>
+        {ready && picker && (
+          <div className="focused-editor-body">
+            <WorkoutExercisePicker
+              exercises={exercises}
+              single={picker.replace}
+              onSelect={addExercises}
+            />
+          </div>
+        )}
+        <div
+          ref={editorBody}
+          className="focused-editor-body"
+          style={picker ? { display: "none" } : undefined}
+        >
+          {!ready ? (
+            <p role="status">Loading editor…</p>
+          ) : (
+            <>
+              {error && (
+                <div role="alert" className="editor-save-error">
+                  <p>{error}</p>
+                </div>
+              )}
+              <Field
+                label={draft.kind === "routine" ? "Routine name" : "Workout"}
+              >
+                <Input
+                  className="workout-name-input"
+                  placeholder="Workout name"
+                  value={draft.title}
+                  onChange={(event) =>
+                    setDraft({ ...draft, title: event.target.value })
+                  }
+                />
+              </Field>
+              {draft.kind === "planned" && (
+                <div className="workout-details">
+                  <Field label="Date">
+                    <Input
+                      type="date"
+                      value={draft.date ?? ""}
+                      onChange={(event) =>
+                        setDraft({ ...draft, date: event.target.value || null })
                       }
                     />
-                  </div>
-                  <TrackingFieldsPicker
-                    label={`${item.name} tracking`}
-                    values={fields}
-                    onChange={(trackingFields) =>
-                      patchItem(block.id, item.id, { trackingFields })
+                  </Field>
+                </div>
+              )}
+              <Field label="Notes">
+                <Textarea
+                  aria-label="Workout notes"
+                  className="workout-notes-input"
+                  placeholder="Optional"
+                  rows={3}
+                  value={draft.notes}
+                  onChange={(event) =>
+                    setDraft({ ...draft, notes: event.target.value })
+                  }
+                />
+              </Field>
+              {draft.blocks.map((block) => (
+                <WorkoutGroup
+                  key={block.id}
+                  block={block}
+                  focusOnMount={newGroupId === block.id}
+                  onChange={(patch) => patchBlock(block.id, patch)}
+                  onAdd={() => openPicker({ blockId: block.id })}
+                  onRemove={() => {
+                    void removeGroup(block)
+                  }}
+                  onReorder={() => setReordering(true)}
+                >
+                  {block.items.map((item) => {
+                    const fields = trackingFields(item)
+                    const load = defaultEntryLoad(item)
+                    const range =
+                      item.repetitionMode === "range" ||
+                      item.sets.some(
+                        (set) =>
+                          set.repsMax != null && set.repsMax !== set.repsMin
+                      )
+                    const notes = creationNotes(block, item)
+                    const setNotes = (entries: typeof notes) =>
+                      setDraft((current) => ({
+                        ...current,
+                        blocks: changeCreationNotes(
+                          current.blocks,
+                          item.id,
+                          entries
+                        ),
+                      }))
+                    const columns = `40px repeat(${fields.length}, minmax(0, 1fr))`
+                    return (
+                      <MovementCard
+                        key={item.id}
+                        className="compact-editor-item"
+                        name={item.name}
+                        detail={[item.equipment, item.setup]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        notes={notes.map((note) => ({
+                          ...note,
+                          scope: "workout" as const,
+                        }))}
+                        restSeconds={movementRest(block, item).restSeconds}
+                        onRest={() =>
+                          setRestSelection({
+                            blockId: block.id,
+                            itemId: item.id,
+                          })
+                        }
+                        onAddNote={(id) =>
+                          setNotes([...notes, { id, text: "" }])
+                        }
+                        onChangeNote={(note, text) =>
+                          setNotes(
+                            notes.map((value) =>
+                              value.id === note.id
+                                ? { id: value.id, text }
+                                : value
+                            )
+                          )
+                        }
+                        onDeleteNote={(note) =>
+                          setNotes(
+                            notes.filter((value) => value.id !== note.id)
+                          )
+                        }
+                        actions={[
+                          {
+                            label: "Reorder exercises",
+                            icon: ArrowUp,
+                            onSelect: () => setReordering(true),
+                          },
+                          {
+                            label: "Replace exercise",
+                            icon: RefreshCw,
+                            onSelect: () =>
+                              openPicker({
+                                blockId: block.id,
+                                itemId: item.id,
+                                replace: true,
+                              }),
+                          },
+                          {
+                            label: "Move to group",
+                            icon: FolderInput,
+                            onSelect: () => setMovingItem(item.id),
+                          },
+                          {
+                            label: "Exercise settings",
+                            icon: Settings2,
+                            separator: true,
+                            onSelect: () =>
+                              setSettings({
+                                blockId: block.id,
+                                itemId: item.id,
+                              }),
+                          },
+                          {
+                            label: "Set details",
+                            icon: Settings2,
+                            disabled: !item.sets.length,
+                            onSelect: () =>
+                              setSetOptions({
+                                blockId: block.id,
+                                itemId: item.id,
+                                targetId: item.sets[0].id,
+                              }),
+                          },
+                          {
+                            label: "Remove exercise",
+                            icon: Trash2,
+                            destructive: true,
+                            separator: true,
+                            onSelect: () =>
+                              setDraft((current) => ({
+                                ...current,
+                                blocks: current.blocks.map((value) =>
+                                  value.id !== block.id
+                                    ? value
+                                    : {
+                                        ...value,
+                                        items: value.items.filter(
+                                          (row) => row.id !== item.id
+                                        ),
+                                      }
+                                ),
+                              })),
+                          },
+                        ]}
+                      >
+                        <div className="movement-target-table">
+                          <div
+                            className="movement-target-head"
+                            style={{ gridTemplateColumns: columns }}
+                          >
+                            <span>Set</span>
+                            {fields.includes("load") && (
+                              <button
+                                type="button"
+                                aria-label={`${item.name} weight units`}
+                                onClick={() =>
+                                  setUnitsSelection({
+                                    blockId: block.id,
+                                    itemId: item.id,
+                                  })
+                                }
+                              >
+                                {load.unit === "unknown"
+                                  ? "Weight"
+                                  : load.unit === "lb"
+                                    ? "LBS"
+                                    : "KG"}
+                              </button>
+                            )}
+                            {fields.includes("reps") && (
+                              <button
+                                type="button"
+                                aria-label={`${item.name} repetition options`}
+                                onClick={() =>
+                                  setRepsSelection({
+                                    blockId: block.id,
+                                    itemId: item.id,
+                                  })
+                                }
+                              >
+                                {range ? "Rep Range" : "Reps"} ▾
+                              </button>
+                            )}
+                            {fields.includes("durationSeconds") && (
+                              <span>Time (s)</span>
+                            )}
+                            {fields.includes("distanceMeters") && (
+                              <span>Distance (m)</span>
+                            )}
+                          </div>
+                          {item.sets.map((target, index) => {
+                            const remove = () =>
+                              patchItem(block.id, item.id, {
+                                sets: item.sets.filter(
+                                  (set) => set.id !== target.id
+                                ),
+                              })
+                            return (
+                              <SwipeDeleteRow
+                                key={target.id}
+                                label={`${item.name} set ${index + 1}`}
+                                onDelete={remove}
+                              >
+                                <div
+                                  className="movement-target-row"
+                                  style={{ gridTemplateColumns: columns }}
+                                >
+                                  <SetTypeMenu
+                                    label={`${item.name} set ${index + 1} type`}
+                                    kind={target.kind}
+                                    number={setNumber(item.sets, index)}
+                                    onChange={(kind) =>
+                                      patchSet(block.id, item, target.id, {
+                                        kind,
+                                      })
+                                    }
+                                    onRemove={remove}
+                                  />
+                                  {fields.includes("load") && (
+                                    <Numeric
+                                      label={`${item.name} set ${index + 1} target weight`}
+                                      value={target.load?.value ?? null}
+                                      onChange={(value) =>
+                                        patchSet(block.id, item, target.id, {
+                                          load: {
+                                            ...(target.load ?? load),
+                                            value,
+                                          },
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {fields.includes("reps") && (
+                                    <div
+                                      className={
+                                        range
+                                          ? "rep-range-fields"
+                                          : "rep-exact-field"
+                                      }
+                                    >
+                                      <Numeric
+                                        label={`${item.name} set ${index + 1} min reps`}
+                                        value={target.repsMin}
+                                        onChange={(repsMin) =>
+                                          patchSet(block.id, item, target.id, {
+                                            repsMin,
+                                            ...(!range
+                                              ? { repsMax: repsMin }
+                                              : {}),
+                                          })
+                                        }
+                                      />
+                                      {range && (
+                                        <>
+                                          <span>to</span>
+                                          <Numeric
+                                            label={`${item.name} set ${index + 1} max reps`}
+                                            value={target.repsMax}
+                                            onChange={(repsMax) =>
+                                              patchSet(
+                                                block.id,
+                                                item,
+                                                target.id,
+                                                { repsMax }
+                                              )
+                                            }
+                                          />
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                  {fields.includes("durationSeconds") && (
+                                    <Numeric
+                                      label={`${item.name} set ${index + 1} target seconds`}
+                                      value={target.durationSeconds}
+                                      onChange={(durationSeconds) =>
+                                        patchSet(block.id, item, target.id, {
+                                          durationSeconds,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                  {fields.includes("distanceMeters") && (
+                                    <Numeric
+                                      label={`${item.name} set ${index + 1} target meters`}
+                                      value={target.distanceMeters}
+                                      onChange={(distanceMeters) =>
+                                        patchSet(block.id, item, target.id, {
+                                          distanceMeters,
+                                        })
+                                      }
+                                    />
+                                  )}
+                                </div>
+                              </SwipeDeleteRow>
+                            )
+                          })}
+                        </div>
+                        <Button
+                          className="add-session-set"
+                          variant="secondary"
+                          onClick={() =>
+                            patchItem(block.id, item.id, {
+                              sets: [
+                                ...item.sets,
+                                {
+                                  ...structuredClone(
+                                    item.sets.at(-1) ?? emptyTarget()
+                                  ),
+                                  id: crypto.randomUUID(),
+                                  kind: "working",
+                                },
+                              ],
+                            })
+                          }
+                        >
+                          <Plus size={14} /> Add set
+                        </Button>
+                      </MovementCard>
+                    )
+                  })}
+                </WorkoutGroup>
+              ))}
+              <Button
+                className="add-exercises-button"
+                variant="outline"
+                onClick={addGroup}
+              >
+                <Plus size={17} /> Add group
+              </Button>
+            </>
+          )}
+        </div>
+        {movingItem && (
+          <MoveToGroup
+            blocks={draft.blocks}
+            itemId={movingItem}
+            onClose={() => setMovingItem(null)}
+            onMove={(destination) => {
+              const group = destination ? null : newGroup(draft.blocks)
+              setDraft((current) => ({
+                ...current,
+                blocks: moveMovement(
+                  group ? [...current.blocks, group] : current.blocks,
+                  movingItem,
+                  destination ?? group!.id
+                ),
+              }))
+              if (group) setNewGroupId(group.id)
+              setMovingItem(null)
+            }}
+          />
+        )}
+        {reordering && (
+          <MovementReorderPanel
+            blocks={draft.blocks}
+            onChange={(blocks) =>
+              setDraft((current) => ({ ...current, blocks }))
+            }
+            onClose={() => setReordering(false)}
+          />
+        )}
+        {restSelection &&
+          (() => {
+            const block = draft.blocks.find(
+              (block) => block.id === restSelection.blockId
+            )
+            const item = block?.items.find(
+              (value) => value.id === restSelection.itemId
+            )
+            if (!block || !item) return null
+            return (
+              <MovementRestPanel
+                name={
+                  block.items.find((item) => item.id === restSelection.itemId)
+                    ?.name ?? block.title
+                }
+                rest={movementRest(block, item)}
+                onChange={(patch) => patchItem(block.id, item.id, patch)}
+                onClose={() => setRestSelection(null)}
+              />
+            )
+          })()}
+        {unitsSelection &&
+          (() => {
+            const block = draft.blocks.find(
+              (block) => block.id === unitsSelection.blockId
+            )
+            const item = block?.items.find(
+              (item) => item.id === unitsSelection.itemId
+            )
+            if (!block || !item) return null
+            return (
+              <Modal
+                title="Weight Input"
+                onClose={() => setUnitsSelection(null)}
+              >
+                <p className="muted mb-4 text-sm">{item.name}</p>
+                <EntryUnits
+                  prefix={`${item.name} target`}
+                  value={defaultEntryLoad(item)}
+                  onChange={(load) =>
+                    patchItem(block.id, item.id, {
+                      sets: item.sets.map((set) => ({
+                        ...set,
+                        load: { ...load, value: set.load?.value ?? null },
+                      })),
+                    })
+                  }
+                />
+              </Modal>
+            )
+          })()}
+        {repsSelection &&
+          (() => {
+            const block = draft.blocks.find(
+              (block) => block.id === repsSelection.blockId
+            )
+            const item = block?.items.find(
+              (item) => item.id === repsSelection.itemId
+            )
+            if (!block || !item) return null
+            const range =
+              item.repetitionMode === "range" ||
+              item.sets.some(
+                (set) => set.repsMax != null && set.repsMax !== set.repsMin
+              )
+            return (
+              <RepetitionOptions
+                range={range}
+                onClose={() => setRepsSelection(null)}
+                onChange={(next) => {
+                  patchItem(block.id, item.id, {
+                    repetitionMode: next ? "range" : "exact",
+                    ...(!next
+                      ? {
+                          sets: item.sets.map((set) => ({
+                            ...set,
+                            repsMax: set.repsMin,
+                          })),
+                        }
+                      : {}),
+                  })
+                }}
+              />
+            )
+          })()}
+        {settingsBlock && (
+          <Modal
+            title={
+              settingsItem ? `${settingsItem.name} settings` : "Group settings"
+            }
+            onClose={() => setSettings(null)}
+          >
+            {settingsItem ? (
+              <>
+                <TrackingFieldsPicker
+                  label={`${settingsItem.name} tracking`}
+                  values={trackingFields(settingsItem)}
+                  onChange={(trackingFields) =>
+                    patchItem(settingsBlock.id, settingsItem.id, {
+                      trackingFields,
+                    })
+                  }
+                />
+                {trackingFields(settingsItem).includes("load") && (
+                  <EntryUnits
+                    prefix={`${settingsItem.name} target`}
+                    value={defaultEntryLoad(settingsItem)}
+                    onChange={(load) =>
+                      patchItem(settingsBlock.id, settingsItem.id, {
+                        sets: settingsItem.sets.map((set) => ({
+                          ...set,
+                          load: { ...load, value: set.load?.value ?? null },
+                        })),
+                      })
                     }
                   />
-                  <details className="small-details">
-                    <summary>Movement settings</summary>
-                    <div className="form-grid">
-                      <Field label="Role">
-                        <NativeSelect
-                          label={`${item.name} role`}
-                          value={item.role}
-                          onChange={(role) =>
-                            patchItem(block.id, item.id, {
-                              role: role as WorkoutItem["role"],
-                            })
-                          }
-                        >
-                          {[
-                            "preparation",
-                            "power",
-                            "lifting",
-                            "conditioning",
-                            "cooldown",
-                          ].map((role) => (
-                            <option key={role}>{role}</option>
-                          ))}
-                        </NativeSelect>
-                      </Field>
-                      <Field label="Primary muscle">
-                        <NativeSelect
-                          label={`${item.name} primary muscle`}
-                          value={item.primaryMuscle ?? ""}
-                          onChange={(muscle) =>
-                            patchItem(block.id, item.id, {
-                              primaryMuscle: muscle
-                                ? (muscle as WorkoutItem["primaryMuscle"])
-                                : null,
-                            })
-                          }
-                        >
-                          <option value="">Not counted</option>
-                          {muscleNames.map((muscle) => (
-                            <option key={muscle} value={muscle}>
-                              {muscleLabels[muscle]}
-                            </option>
-                          ))}
-                        </NativeSelect>
-                      </Field>
-                      <Field label="Setup">
-                        <Input
-                          value={item.setup}
-                          onChange={(event) =>
-                            patchItem(block.id, item.id, {
-                              setup: event.target.value,
-                            })
-                          }
-                        />
-                      </Field>
-                      <label className="check-label">
-                        <input
-                          type="checkbox"
-                          checked={item.unilateral}
-                          onChange={(event) =>
-                            patchItem(block.id, item.id, {
-                              unilateral: event.target.checked,
-                            })
-                          }
-                        />
-                        Each side
-                      </label>
-                    </div>
-                  </details>
-                  {fields.includes("load") && (
-                    <div className="my-3 flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        Target units
-                      </span>
-                      <EntryUnits
-                        prefix={`${item.name} target`}
-                        value={load}
-                        onChange={(value) => changeUnits(block, item, value)}
-                      />
-                    </div>
-                  )}
-                  {item.sets.map((target, index) => (
-                    <div
-                      className="editor-target-row mb-2 rounded-lg border border-border bg-background p-3"
-                      key={target.id}
-                    >
-                      <div className="mb-2 flex items-center justify-between">
-                        <strong className="text-xs">Set {index + 1}</strong>
-                        <MoveButtons
-                          label={`${item.name} set ${index + 1}`}
-                          index={index}
-                          length={item.sets.length}
-                          onMove={(direction) =>
-                            patchItem(block.id, item.id, {
-                              sets: move(item.sets, index, direction),
-                            })
-                          }
-                          onRemove={() =>
-                            patchItem(block.id, item.id, {
-                              sets: item.sets.filter(
-                                (entry) => entry.id !== target.id
-                              ),
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {fields.includes("reps") && (
-                          <>
-                            <Field
-                              label="Min reps"
-                              className="min-w-[65px] flex-1"
-                            >
-                              <Numeric
-                                label={`${item.name} set ${index + 1} min reps`}
-                                value={target.repsMin}
-                                onChange={(repsMin) =>
-                                  patchSet(block.id, item.id, target.id, {
-                                    repsMin,
-                                  })
-                                }
-                              />
-                            </Field>
-                            <Field
-                              label="Max reps"
-                              className="min-w-[65px] flex-1"
-                            >
-                              <Numeric
-                                label={`${item.name} set ${index + 1} max reps`}
-                                value={target.repsMax}
-                                onChange={(repsMax) =>
-                                  patchSet(block.id, item.id, target.id, {
-                                    repsMax,
-                                  })
-                                }
-                              />
-                            </Field>
-                          </>
-                        )}
-                        {fields.includes("load") && (
-                          <Field
-                            label={`Weight${target.load?.unit && target.load.unit !== "unknown" ? ` (${target.load.unit})` : ""}`}
-                            className="min-w-[75px] flex-1"
-                          >
-                            <Numeric
-                              label={`${item.name} set ${index + 1} target weight`}
-                              value={target.load?.value ?? null}
-                              onChange={(value) =>
-                                patchSet(block.id, item.id, target.id, {
-                                  load: { ...(target.load ?? load), value },
-                                })
-                              }
-                            />
-                          </Field>
-                        )}
-                        {fields.includes("durationSeconds") && (
-                          <Field
-                            label="Time (s)"
-                            className="min-w-[75px] flex-1"
-                          >
-                            <Numeric
-                              label={`${item.name} set ${index + 1} target seconds`}
-                              value={target.durationSeconds}
-                              onChange={(durationSeconds) =>
-                                patchSet(block.id, item.id, target.id, {
-                                  durationSeconds,
-                                })
-                              }
-                            />
-                          </Field>
-                        )}
-                        {fields.includes("distanceMeters") && (
-                          <Field
-                            label="Distance (m)"
-                            className="min-w-[75px] flex-1"
-                          >
-                            <Numeric
-                              label={`${item.name} set ${index + 1} target meters`}
-                              value={target.distanceMeters}
-                              onChange={(distanceMeters) =>
-                                patchSet(block.id, item.id, target.id, {
-                                  distanceMeters,
-                                })
-                              }
-                            />
-                          </Field>
-                        )}
-                      </div>
-                      <details className="small-details">
-                        <summary>Set options</summary>
-                        <div className="form-grid">
-                          <Field label="Set type">
-                            <NativeSelect
-                              label={`${item.name} set ${index + 1} type`}
-                              value={target.kind}
-                              onChange={(kind) =>
-                                patchSet(block.id, item.id, target.id, {
-                                  kind: kind as SetTarget["kind"],
-                                })
-                              }
-                            >
-                              <option value="working">Working</option>
-                              <option value="warmup">Warm-up</option>
-                            </NativeSelect>
-                          </Field>
-                          <Field label="RIR">
-                            <Numeric
-                              label={`${item.name} set ${index + 1} target RIR`}
-                              value={target.rir}
-                              onChange={(rir) =>
-                                patchSet(block.id, item.id, target.id, { rir })
-                              }
-                            />
-                          </Field>
-                          <Field label="Tempo">
-                            <Input
-                              value={target.tempo}
-                              onChange={(event) =>
-                                patchSet(block.id, item.id, target.id, {
-                                  tempo: event.target.value,
-                                })
-                              }
-                            />
-                          </Field>
-                        </div>
-                        {fields.includes("load") && (
-                          <Field label="Set-specific target units">
-                            <EntryUnits
-                              prefix={`${item.name} set ${index + 1} target`}
-                              value={target.load ?? load}
-                              onChange={(value) =>
-                                patchSet(block.id, item.id, target.id, {
-                                  load: value,
-                                })
-                              }
-                            />
-                          </Field>
-                        )}
-                      </details>
-                      {!isHistoricalCommentary(target.notes) && (
-                        <OptionalNote
-                          label={`Set ${index + 1} notes`}
-                          value={target.notes}
-                          onChange={(notes) =>
-                            patchSet(block.id, item.id, target.id, { notes })
-                          }
-                        />
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      patchItem(block.id, item.id, {
-                        sets: [
-                          ...item.sets,
-                          {
-                            ...structuredClone(
-                              item.sets.at(-1) ?? emptyTarget()
-                            ),
-                            id: crypto.randomUUID(),
-                          },
-                        ],
+                )}
+                <Field label="Setup">
+                  <Input
+                    value={settingsItem.setup}
+                    onChange={(event) =>
+                      patchItem(settingsBlock.id, settingsItem.id, {
+                        setup: event.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Role">
+                  <NativeSelect
+                    label="Exercise role"
+                    value={settingsItem.role}
+                    onChange={(role) =>
+                      patchItem(settingsBlock.id, settingsItem.id, {
+                        role: role as WorkoutItem["role"],
                       })
                     }
                   >
-                    <Plus size={14} /> Add set
-                  </Button>
-                </details>
-              )
-            })}
-            <WorkoutExercisePicker
-              label="Add movement"
-              exercises={exercises}
-              onSelect={(exercise) => {
-                const item = makeItem(exercise)
-                item.trackingFields = trackingFields(exercise)
-                patchBlock(block.id, { items: [...block.items, item] })
-              }}
-            />
-            <details className="mt-4 text-xs text-muted-foreground">
-              <summary>Block instructions</summary>
-              <Field label="Instructions" className="mt-3">
-                <Textarea
-                  value={block.notes}
-                  onChange={(event) =>
-                    patchBlock(block.id, { notes: event.target.value })
-                  }
-                />
-              </Field>
-            </details>
-          </section>
-        ))}
-        <Button
-          variant="outline"
-          onClick={() =>
-            setDraft((current) => ({
-              ...current,
-              blocks: [
-                ...current.blocks,
-                {
-                  id: crypto.randomUUID(),
-                  title: "New block",
-                  kind: "straight",
-                  restSeconds: null,
-                  rounds: null,
-                  items: [],
-                  notes: "",
-                },
-              ],
-            }))
-          }
-        >
-          <Plus size={16} /> Add block
-        </Button>
-        {!isHistoricalCommentary(draft.notes) && (
-          <OptionalNote
-            label="Workout notes"
-            value={draft.notes}
-            onChange={(notes) => setDraft({ ...draft, notes })}
-          />
+                    {[
+                      "preparation",
+                      "power",
+                      "lifting",
+                      "conditioning",
+                      "cooldown",
+                    ].map((role) => (
+                      <option key={role}>{role}</option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+                <Field label="Primary muscle">
+                  <NativeSelect
+                    label="Primary muscle"
+                    value={settingsItem.primaryMuscle ?? ""}
+                    onChange={(muscle) =>
+                      patchItem(settingsBlock.id, settingsItem.id, {
+                        primaryMuscle: muscle
+                          ? (muscle as WorkoutItem["primaryMuscle"])
+                          : null,
+                      })
+                    }
+                  >
+                    <option value="">Not counted</option>
+                    {muscleNames.map((muscle) => (
+                      <option key={muscle} value={muscle}>
+                        {muscleLabels[muscle]}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    checked={settingsItem.unilateral}
+                    onChange={(event) =>
+                      patchItem(settingsBlock.id, settingsItem.id, {
+                        unilateral: event.target.checked,
+                      })
+                    }
+                  />{" "}
+                  Each side
+                </label>
+              </>
+            ) : null}
+          </Modal>
         )}
-      </div>
-      {error && (
-        <p role="alert" className="error-message">
-          {error}
-        </p>
-      )}
-      <div className="dialog-footer">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            if (
-              JSON.stringify(draft) === JSON.stringify(workout) ||
-              (await confirmAction("Discard your unsaved workout changes?"))
-            )
-              onClose()
-          }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={() => void save()}
-          disabled={busy || !draft.title.trim()}
-        >
-          <Save size={16} />
-          {busy ? "Saving…" : "Save workout"}
-        </Button>
-      </div>
-    </Modal>
+        {optionBlock && optionItem && optionTarget && (
+          <Modal title="Set Details" onClose={() => setSetOptions(null)}>
+            <Field label="Set">
+              <NativeSelect
+                label={`${optionItem.name} set details`}
+                value={optionTarget.id}
+                onChange={(targetId) =>
+                  setSetOptions({
+                    blockId: optionBlock.id,
+                    itemId: optionItem.id,
+                    targetId,
+                  })
+                }
+              >
+                {optionItem.sets.map((set, index) => (
+                  <option key={set.id} value={set.id}>
+                    Set {index + 1}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Field label="RIR">
+              <Numeric
+                label="Target RIR"
+                value={optionTarget.rir}
+                onChange={(rir) =>
+                  patchSet(optionBlock.id, optionItem, optionTarget.id, { rir })
+                }
+              />
+            </Field>
+            <Field label="Tempo">
+              <Input
+                value={optionTarget.tempo}
+                onChange={(event) =>
+                  patchSet(optionBlock.id, optionItem, optionTarget.id, {
+                    tempo: event.target.value,
+                  })
+                }
+              />
+            </Field>
+            {trackingFields(optionItem).includes("load") && (
+              <EntryUnits
+                prefix="Set target"
+                value={optionTarget.load ?? defaultEntryLoad(optionItem)}
+                onChange={(load) =>
+                  patchSet(optionBlock.id, optionItem, optionTarget.id, {
+                    load,
+                  })
+                }
+              />
+            )}
+            <Field label="Set notes">
+              <Textarea
+                value={optionTarget.notes}
+                onChange={(event) =>
+                  patchSet(optionBlock.id, optionItem, optionTarget.id, {
+                    notes: event.target.value,
+                  })
+                }
+              />
+            </Field>
+          </Modal>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }

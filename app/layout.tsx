@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   applicationName: "Training Log",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    // Keep installed-app content below the iOS status bar.
+    statusBarStyle: "black",
     title: "Training Log",
   },
   icons: { icon: "/training-icon.svg", apple: "/training-icon.svg" },
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
+  viewportFit: "auto",
   themeColor: "#101114",
 }
 

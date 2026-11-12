@@ -31,7 +31,7 @@ const actualEntry = sourceEntry.extend({
   equipment: z.string().optional(),
   setup: z.string().optional(),
   role: z.enum(["preparation", "power", "lifting", "conditioning", "cooldown"]).default("lifting"),
-  kind: z.enum(["working", "warmup"]).default("working"),
+  kind: z.enum(["working", "warmup", "failure", "drop"]).default("working"),
   primaryMuscle: z.enum(muscleNames).optional(),
   basis: z.enum(["total", "per_hand", "added", "bodyweight", "assistance", "unknown"]).default("unknown"),
   values: z.array(z.tuple([nullableNumber, nullableNumber, unit,
