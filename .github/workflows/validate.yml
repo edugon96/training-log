@@ -34,6 +34,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Configure disposable push credentials
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          import webpush from 'web-push';
+          const keys = webpush.generateVAPIDKeys();
+          appendFileSync(process.env.GITHUB_ENV, [
+            `VAPID_PUBLIC_KEY=${keys.publicKey}`,
+            `VAPID_PRIVATE_KEY=${keys.privateKey}`,
+            'VAPID_SUBJECT=mailto:ci@example.invalid',
+            '',
+          ].join('\n'));
+          NODE
       - run: npm run setup:local
       - run: npm run db:migrate
       - run: npm run api:generate && git diff --exit-code -- public/openapi.json contracts/api.d.ts

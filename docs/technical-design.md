@@ -2,14 +2,27 @@
 
 ## Architecture
 
-```text
-React Web Client         Future Mobile Client / Agent
-        │                              │
-        └──────── Versioned HTTP API ──┘
-                         │
-                Domain And Access Rules
-                         │
-               PostgreSQL + Drizzle
+```mermaid
+flowchart TB
+    web["Web App<br/>React + Next.js"]
+    tools["Your Agents and Scripts"]
+    mobile["Future Mobile Client"]
+    api["Versioned HTTP API<br/>/api/v1"]
+    domain["Domain and Access Rules<br/>server/"]
+    db[("PostgreSQL<br/>Drizzle ORM")]
+
+    web --> api
+    tools --> api
+    mobile -.-> api
+    api --> domain
+    domain --> db
+
+    classDef client fill:#eaf7ee,stroke:#36844a,color:#163b20
+    classDef service fill:#edf3ff,stroke:#5275ad,color:#1c355c
+    classDef storage fill:#f4effa,stroke:#8063a0,color:#40275c
+    class web,tools,mobile client
+    class api,domain service
+    class db storage
 ```
 
 The first deployment uses Next.js for the web shell and route handlers. Domain modules live under `server/`, independently of React. The client consumes the generated API contract through `lib/api-client.ts`. Additional clients can use the same HTTP API without importing UI code.

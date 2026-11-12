@@ -43,6 +43,11 @@ afterAll(async () => {
     )
 })
 beforeEach(() => {
+  // Delivery is mocked in this suite. Keep configuration independent of a
+  // developer's optional local push credentials.
+  vi.stubEnv("VAPID_PUBLIC_KEY", "test")
+  vi.stubEnv("VAPID_PRIVATE_KEY", "test")
+  vi.stubEnv("VAPID_SUBJECT", "mailto:test@example.invalid")
   vi.mocked(sendPush).mockClear()
 })
 describe.skipIf(!enabled)("rest alerts on PostgreSQL", () => {

@@ -32,9 +32,6 @@ Workout summaries also show duration, completed sets, and recorded weight volume
 
 Keep the workout clock and rest countdown close to your set log. Choose presets or a custom duration, enable automatic rest for individual movements, and use countdown sounds or optional device notifications. Notification delivery requires connectivity and supported device settings.
 
-<details>
-<summary>Explore the App</summary>
-
 | Workout Planning | Workout Logging |
 |---|---|
 | ![Training week with planned and completed workouts](docs/images/week.png) | ![Workout logging with individual set entries](docs/images/logging.png) |
@@ -44,8 +41,6 @@ Keep the workout clock and rest countdown close to your set log. Choose presets 
 | ![Muscle ledger comparing planned sets, completed sets, and goals](docs/images/ledger.png) | ![Rest timer with a radial dial and duration presets](docs/images/timer.png) |
 
 [Editable Figma mockups and image credits](docs/images/README.md)
-
-</details>
 
 ## API and AI Access
 
